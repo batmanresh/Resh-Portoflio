@@ -16,7 +16,12 @@ import {
   Briefcase,
   Layers,
   FileText,
-  ChevronDown
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Menu,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 // ============================================================================
@@ -43,7 +48,7 @@ export type Project = {
   image: string;
   outcome: string;
   link?: string;
-  media?: { url: string; type: 'image' | 'video' }[];
+  media?: { url: string; type: 'image' | 'video'; thumbnailUrl?: string }[];
 };
 
 export type Principle = {
@@ -271,7 +276,8 @@ const DEFAULT_CONTENT: PortfolioContent = {
 };
 
 const STORAGE_KEY = 'resham-portfolio-content-v6';
-const ADMIN_EMAIL = 'batmanresh007@gmail.com';
+const ADMIN_USERNAME = 'batmanreshh';
+const LEGACY_ADMIN_EMAIL = 'batmanresh007@gmail.com';
 const ADMIN_PASSWORD = 'admin123';
 const ADMIN_PASSWORD_KEY = 'resham-portfolio-admin-password';
 
@@ -280,7 +286,7 @@ function loadContent(): PortfolioContent {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_CONTENT;
     const parsed = JSON.parse(raw) as Partial<PortfolioContent>;
-    const publicEmail = parsed.email?.trim().toLowerCase() === ADMIN_EMAIL ? '' : (parsed.email ?? DEFAULT_CONTENT.email);
+    const publicEmail = parsed.email?.trim().toLowerCase() === LEGACY_ADMIN_EMAIL ? '' : (parsed.email ?? DEFAULT_CONTENT.email);
     const restoreContactCopy = (parsed.contactHeading === 'Got a good feeling' && parsed.contactAccent === 'about this?') || parsed.contactHeading === 'A thoughtful conversation is a good place to start.';
     return { ...DEFAULT_CONTENT, ...parsed, contactHeading: restoreContactCopy ? DEFAULT_CONTENT.contactHeading : (parsed.contactHeading || DEFAULT_CONTENT.contactHeading), contactAccent: restoreContactCopy ? DEFAULT_CONTENT.contactAccent : (parsed.contactAccent || DEFAULT_CONTENT.contactAccent), email: publicEmail, location: '', availability: '' };
   } catch {
@@ -448,22 +454,26 @@ function ExperienceRow({ item, index }: { item: Experience; index: number }) {
 // LIGHTBOX
 // ============================================================================
 function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
-  const mediaItems = item.media?.length ? item.media : [{ url: item.image, type: item.mediaType || 'image' as 'image' | 'video' }];
+  const mediaItems: NonNullable<Project['media']> = item.media?.length ? item.media : [{ url: item.image, type: (item.mediaType || 'image') as 'image' | 'video', thumbnailUrl: undefined }];
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const activeMedia = mediaItems[activeMediaIndex] || mediaItems[0];
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight') setActiveMediaIndex(index => (index + 1) % mediaItems.length);
+      if (e.key === 'ArrowLeft') setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length);
+    };
     window.addEventListener('keydown', handler);
     document.body.style.overflow = 'hidden';
     return () => {
       window.removeEventListener('keydown', handler);
       document.body.style.overflow = '';
     };
-  }, [onClose]);
+  }, [onClose, mediaItems.length]);
 
   return (
     <div
-      className="lightbox-backdrop fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 md:p-10"
+      className="lightbox-backdrop fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-2 md:p-10"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
@@ -480,16 +490,18 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
         </button>
 
         {/* Media */}
-        <div className="flex min-h-0 flex-1 flex-col bg-[#10100f] p-3 md:p-5">
+        <div className="lightbox-content flex min-h-0 flex-1 flex-col bg-[#10100f] p-3 md:p-5">
           <div className="project-viewer-media relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black">
             {activeMedia?.type === 'video' ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay className="h-full max-h-full w-full object-contain" /> : <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="h-full max-h-full w-full object-contain" />}
+            {mediaItems.length > 1 && <><button type="button" onClick={() => setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length)} aria-label="Previous media" className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/85"><ChevronLeft className="h-5 w-5" /></button><button type="button" onClick={() => setActiveMediaIndex(index => (index + 1) % mediaItems.length)} aria-label="Next media" className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/85"><ChevronRight className="h-5 w-5" /></button></>}
             {mediaItems.length > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1.5 font-mono text-[10px] text-white">{String(activeMediaIndex + 1).padStart(2, '0')} / {String(mediaItems.length).padStart(2, '0')}</span>}
           </div>
-          {mediaItems.length > 1 && <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{mediaItems.map((media, index) => <button key={`${media.url}-${index}`} onClick={() => setActiveMediaIndex(index)} aria-label={`Show media ${index + 1}`} aria-pressed={activeMediaIndex === index} className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 ${activeMediaIndex === index ? 'border-[#e48967]' : 'border-white/10 opacity-60 hover:opacity-100'}`}>{media.type === 'video' ? <span className="flex h-full items-center justify-center bg-[#292927] text-white"><Film className="h-4 w-4" /></span> : <img src={media.url} alt="" className="h-full w-full object-cover" />}</button>)}</div>}
+          {mediaItems.length > 1 && <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{mediaItems.map((media, index) => <button key={`${media.url}-${index}`} onClick={() => setActiveMediaIndex(index)} aria-label={`Show media ${index + 1}`} aria-pressed={activeMediaIndex === index} className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 ${activeMediaIndex === index ? 'border-[#e48967]' : 'border-white/10 opacity-60 hover:opacity-100'}`}>{media.thumbnailUrl ? <img src={media.thumbnailUrl} alt="" className="h-full w-full object-cover" /> : media.type === 'video' ? <span className="flex h-full items-center justify-center bg-[#292927] text-white"><Film className="h-4 w-4" /></span> : <img src={media.url} alt="" className="h-full w-full object-cover" />}</button>)}</div>}
         </div>
 
         {/* Info bar */}
-        <div className="shrink-0 border-t border-white/10 px-6 py-5 text-white">
+        <div className="lightbox-info shrink-0 border-t border-white/10 px-6 py-5 text-white">
+          <button onClick={onClose} className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs font-bold text-white md:hidden" aria-label="Back to work"><ChevronLeft className="h-4 w-4" /> Back to work</button>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <p className="eyebrow text-[#e48967] font-bold mb-1">{item.category}</p>
@@ -547,10 +559,17 @@ function AdminPortal({
   // Project form
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isAddingProject, setIsAddingProject] = useState(false);
+  const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null);
+  const [draggedMediaIndex, setDraggedMediaIndex] = useState<number | null>(null);
+  const editFormRef = useRef<HTMLFormElement | null>(null);
+  const adminProjectsRef = useRef<HTMLDivElement | null>(null);
+  const [editFormTop, setEditFormTop] = useState(0);
   const [projectForm, setProjectForm] = useState<Partial<Project>>({
     title: '', category: 'Brand & Events', mediaType: 'image', image: '', role: '', summary: '', outcome: '', link: ''
   });
-  const [mediaDrafts, setMediaDrafts] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
+  const [mediaDrafts, setMediaDrafts] = useState<{ url: string; type: 'image' | 'video'; thumbnailUrl?: string }[]>([]);
+  const [coverIndex, setCoverIndex] = useState(0);
+  const captureRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const [categoryDraft, setCategoryDraft] = useState('');
 
   // Experience form
@@ -606,15 +625,12 @@ function AdminPortal({
 
   const handleLogin = (e: FormEvent) => {
     e.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail.trim())) {
-      setLoginError('Enter a valid admin email address.');
-      return;
-    }
+    if (!loginEmail.trim()) { setLoginError('Enter your admin username.'); return; }
     if (!loginPassword) {
       setLoginError('Enter your password.');
       return;
     }
-    if (loginEmail.trim().toLowerCase() === ADMIN_EMAIL && loginPassword === (localStorage.getItem(ADMIN_PASSWORD_KEY) || ADMIN_PASSWORD)) {
+    if (loginEmail.trim().toLowerCase() === ADMIN_USERNAME && loginPassword === (localStorage.getItem(ADMIN_PASSWORD_KEY) || ADMIN_PASSWORD)) {
       setAuthenticated(true);
       setLoginError('');
     } else {
@@ -644,10 +660,12 @@ function AdminPortal({
     if (!projectTitle) { notify('Add a project title before saving.'); return; }
     if (!media.length) { notify('Add at least one photo or video.'); return; }
     if (media.some(item => !validUrl(item.url))) { notify('Use a valid http or https URL for each photo or video.'); return; }
+    const requestedCover = media[coverIndex] || media[0];
+    if (requestedCover.type === 'video' && !requestedCover.thumbnailUrl && !projectForm.image) { notify('Choose a thumbnail URL or capture a frame for the video cover.'); return; }
     if (projectForm.link?.trim() && !validUrl(projectForm.link.trim())) { notify('Use a valid http or https URL for the project link.'); return; }
     const normalizedForm = { ...projectForm, title: projectTitle, category: projectForm.category?.trim() || 'Brand & Events', link: projectForm.link?.trim() || '' };
-    const firstMedia = media[0];
-    const savedForm = { ...normalizedForm, media, image: firstMedia?.url || projectForm.image, mediaType: firstMedia?.type || projectForm.mediaType };
+    const selectedCover = media[coverIndex] || media[0];
+    const savedForm = { ...normalizedForm, media, image: selectedCover?.thumbnailUrl || (selectedCover?.type === 'image' ? selectedCover.url : projectForm.image) || '', mediaType: selectedCover?.type || projectForm.mediaType };
     let updatedProjects: Project[];
     if (editingProject) {
       updatedProjects = content.projects.map(p => p.id === editingProject.id ? ({ ...p, ...savedForm } as Project) : p);
@@ -678,6 +696,23 @@ function AdminPortal({
       onUpdateContent({ ...content, projects: content.projects.filter(p => p.id !== id) });
       notify('Project deleted.');
     }
+  };
+
+  const moveProject = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= content.projects.length || fromIndex === toIndex) return;
+    const projects = [...content.projects];
+    const [moved] = projects.splice(fromIndex, 1);
+    projects.splice(toIndex, 0, moved);
+    onUpdateContent({ ...content, projects });
+  };
+
+  const moveDraftMedia = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= mediaDrafts.length || fromIndex === toIndex) return;
+    const reordered = [...mediaDrafts];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    setMediaDrafts(reordered);
+    setCoverIndex(current => current === fromIndex ? toIndex : fromIndex < current && toIndex >= current ? current - 1 : fromIndex > current && toIndex <= current ? current + 1 : current);
   };
 
   // --- EXPERIENCE CRUD ---
@@ -778,12 +813,12 @@ function AdminPortal({
           </div>
           <form onSubmit={handleLogin} className="space-y-3">
             <div>
-              <label className="text-[11px] font-bold text-black/60 block mb-1">Email</label>
+              <label className="text-[11px] font-bold text-black/60 block mb-1">Username</label>
               <input
-                type="email" required autoFocus
+                type="text" required autoFocus
                 value={loginEmail}
                 onChange={e => setLoginEmail(e.target.value)}
-                placeholder="Admin email"
+                placeholder="Admin username"
                 className={inputCls}
               />
             </div>
@@ -872,7 +907,7 @@ function AdminPortal({
 
           {/* PROJECTS */}
           {activeTab === 'projects' && (
-            <div className="space-y-6">
+            <div ref={adminProjectsRef} className="relative space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-black">Selected Work</h3>
@@ -889,7 +924,7 @@ function AdminPortal({
               </div>
 
               {(isAddingProject || editingProject) && (
-                <form onSubmit={handleSaveProject} className="rounded-2xl border border-black/15 bg-white p-5 space-y-4">
+                <form ref={editFormRef} onSubmit={handleSaveProject} style={editingProject ? { position: 'absolute', top: editFormTop, left: 0, right: 0, zIndex: 10 } : undefined} className="rounded-2xl border border-black/15 bg-white p-5 space-y-4 shadow-xl">
                   <div className="flex items-center justify-between border-b border-black/10 pb-3">
                     <h4 className="text-sm font-bold">{editingProject ? 'Edit Project' : 'Add Project'}</h4>
                     <button type="button" onClick={() => { setIsAddingProject(false); setEditingProject(null); }} className="text-xs text-black/50 hover:text-black font-semibold">Cancel</button>
@@ -906,8 +941,29 @@ function AdminPortal({
                     </div>
                   </div>
                   <div className="space-y-3 rounded-xl border border-black/10 bg-[#f6f5f1] p-4">
-                    <div className="flex items-center justify-between"><div><label className="text-[11px] font-bold text-black/70">Project media</label><p className="text-[10px] text-black/45">Add each photo or video as its own item.</p></div><button type="button" onClick={() => setMediaDrafts([...mediaDrafts, { url: '', type: 'image' }])} className="rounded-full bg-black px-3 py-2 text-[10px] font-bold text-white">+ Add media</button></div>
-                    {mediaDrafts.map((media, index) => <div key={index} className="grid grid-cols-[minmax(0,1fr)_90px_34px] gap-2"><input type="url" required aria-label={`Media URL ${index + 1}`} value={media.url} onChange={e => setMediaDrafts(mediaDrafts.map((m, i) => i === index ? { ...m, url: e.target.value } : m))} placeholder="Paste image or video URL" className={inputCls} /><select aria-label="Media type" value={media.type} onChange={e => setMediaDrafts(mediaDrafts.map((m, i) => i === index ? { ...m, type: e.target.value as 'image' | 'video' } : m))} className={inputCls}><option value="image">Photo</option><option value="video">Video</option></select><button type="button" aria-label="Remove media" disabled={mediaDrafts.length === 1} onClick={() => setMediaDrafts(mediaDrafts.filter((_, i) => i !== index))} className="rounded-lg border border-black/10 text-black/50 disabled:opacity-30">×</button></div>)}
+                    <div className="flex flex-wrap items-center justify-between gap-2"><div><label className="text-[11px] font-bold text-black/70">Project media</label><p className="text-[10px] text-black/45">Choose any item as the project cover. Add a thumbnail URL or capture a video frame.</p></div><button type="button" onClick={() => setMediaDrafts([...mediaDrafts, { url: '', type: 'image' }])} className="rounded-full bg-black px-3 py-2 text-[10px] font-bold text-white">+ Add media</button></div>
+                    {mediaDrafts.map((media, index) => <div key={index} draggable onDragStart={() => setDraggedMediaIndex(index)} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (draggedMediaIndex !== null) moveDraftMedia(draggedMediaIndex, index); setDraggedMediaIndex(null); }} onDragEnd={() => setDraggedMediaIndex(null)} className={`rounded-xl border border-black/10 bg-white p-3 space-y-2 ${draggedMediaIndex === index ? 'opacity-50' : ''}`}>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                        <div className="flex items-center justify-between gap-2 sm:w-8 sm:flex-col">
+                          <button type="button" aria-label={`Drag media ${index + 1} to reorder`} className="cursor-grab touch-none text-black/35 active:cursor-grabbing"><GripVertical className="h-5 w-5" /></button>
+                          <div className="flex gap-1 sm:flex-col"><button type="button" onClick={() => moveDraftMedia(index, index - 1)} disabled={index === 0} aria-label={`Move media ${index + 1} up`} className="rounded border border-black/10 p-1 text-black/60 disabled:opacity-25"><ChevronUp className="h-3 w-3" /></button><button type="button" onClick={() => moveDraftMedia(index, index + 1)} disabled={index === mediaDrafts.length - 1} aria-label={`Move media ${index + 1} down`} className="rounded border border-black/10 p-1 text-black/60 disabled:opacity-25"><ChevronDown className="h-3 w-3" /></button></div>
+                        </div>
+                        <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-black/10">
+                          {media.thumbnailUrl || media.type === 'image' && media.url ? <img src={media.thumbnailUrl || media.url} alt="" className="h-full w-full object-cover" /> : media.type === 'video' && media.url ? <video ref={el => { captureRefs.current[index] = el; }} src={media.url} muted controls playsInline preload="metadata" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-[10px] text-black/40">Preview</div>}
+                        </div>
+                        <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_72px_30px] gap-2 sm:grid-cols-[minmax(0,1fr)_90px_34px]">
+                          <input type="url" required aria-label={`Media URL ${index + 1}`} value={media.url} onChange={e => setMediaDrafts(mediaDrafts.map((m, i) => i === index ? { ...m, url: e.target.value } : m))} placeholder="Paste image or video URL" className={inputCls} />
+                          <select aria-label="Media type" value={media.type} onChange={e => setMediaDrafts(mediaDrafts.map((m, i) => i === index ? { ...m, type: e.target.value as 'image' | 'video' } : m))} className={inputCls}><option value="image">Photo</option><option value="video">Video</option></select>
+                          <button type="button" aria-label="Remove media" disabled={mediaDrafts.length === 1} onClick={() => { setMediaDrafts(mediaDrafts.filter((_, i) => i !== index)); setCoverIndex(current => Math.max(0, current > index ? current - 1 : current)); }} className="rounded-lg border border-black/10 text-black/50 disabled:opacity-30">×</button>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="flex items-center gap-1.5 text-[10px] font-bold"><input type="radio" name="project-cover" checked={coverIndex === index} onChange={() => setCoverIndex(index)} /> Use as project cover</label>
+                        <input type="url" aria-label={`Thumbnail URL ${index + 1}`} value={media.thumbnailUrl?.startsWith('data:') ? '' : media.thumbnailUrl || ''} onChange={e => setMediaDrafts(mediaDrafts.map((m, i) => i === index ? { ...m, thumbnailUrl: e.target.value } : m))} placeholder="Optional thumbnail image URL" className={`${inputCls} min-w-[180px] flex-1`} />
+                        <label className="cursor-pointer rounded-lg border border-black/15 px-3 py-2 text-[10px] font-bold">Upload thumbnail<input type="file" accept="image/*" className="sr-only" onChange={e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => setMediaDrafts(current => current.map((m, i) => i === index ? { ...m, thumbnailUrl: String(reader.result) } : m)); reader.readAsDataURL(file); e.target.value = ''; }} /></label>
+                        {media.type === 'video' && <button type="button" onClick={() => { const video = captureRefs.current[index]; if (!video || !video.videoWidth) { notify('Wait for the video preview to load, then try again.'); return; } const scale = Math.min(1, 640 / video.videoWidth); const canvas = document.createElement('canvas'); canvas.width = Math.round(video.videoWidth * scale); canvas.height = Math.round(video.videoHeight * scale); canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height); try { const thumbnailUrl = canvas.toDataURL('image/jpeg', .72); setMediaDrafts(mediaDrafts.map((m, i) => i === index ? { ...m, thumbnailUrl } : m)); notify('Video frame captured.'); } catch { notify('This video does not allow frame capture. Use a thumbnail URL.'); } }} className="rounded-lg border border-black/15 px-3 py-2 text-[10px] font-bold">Capture current frame</button>}
+                      </div>
+                    </div>)}
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-black/70 block mb-1">Role / Scope</label>
@@ -935,14 +991,12 @@ function AdminPortal({
 
               <div className="space-y-3">
                 {content.projects.map((proj, idx) => (
-                  <div key={proj.id || idx} className="flex items-center justify-between gap-4 rounded-xl border border-black/10 bg-white p-3.5">
+                  <div key={proj.id || idx} data-project-index={idx} draggable onDragStart={() => setDraggedProjectId(proj.id)} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const fromIndex = content.projects.findIndex(project => project.id === draggedProjectId); if (fromIndex >= 0) moveProject(fromIndex, idx); setDraggedProjectId(null); }} onDragEnd={() => setDraggedProjectId(null)} className={`flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-white p-3.5 ${draggedProjectId === proj.id ? 'opacity-50' : ''}`}>
                     <div className="flex items-center gap-3">
+                      <button type="button" aria-label={`Drag to reorder ${proj.title}`} className="cursor-grab touch-none text-black/35 active:cursor-grabbing"><GripVertical className="h-5 w-5" /></button>
                       <div className="relative h-12 w-16 overflow-hidden rounded-lg bg-black/10 shrink-0">
-                        {proj.mediaType === 'video' ? (
-                          <div className="flex h-full w-full items-center justify-center bg-black text-white"><Film className="h-4 w-4" /></div>
-                        ) : (
-                          <img src={proj.image} alt="" className="h-full w-full object-cover" onError={e => { (e.target as HTMLElement).style.display = 'none'; }} />
-                        )}
+                        {proj.mediaType === 'video' && <div className="absolute inset-0 flex items-center justify-center bg-black text-white"><Film className="h-4 w-4" /></div>}
+                        <img src={proj.image} alt="" className="relative h-full w-full object-cover" onError={e => { (e.target as HTMLElement).style.display = 'none'; }} />
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
@@ -954,7 +1008,8 @@ function AdminPortal({
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <button onClick={() => { setEditingProject(proj); setProjectForm({ ...proj }); setMediaDrafts(proj.media?.length ? proj.media : [{ url: proj.image, type: proj.mediaType || 'image' }]); setCategoryDraft(proj.category); setIsAddingProject(false); }} className="rounded-lg border border-black/10 p-2 hover:bg-[#f6f5f1]" title="Edit"><Edit2 className="h-3.5 w-3.5 text-black/70" /></button>
+                      <div className="flex flex-col gap-1"><button type="button" onClick={() => moveProject(idx, idx - 1)} disabled={idx === 0} aria-label={`Move ${proj.title} up`} className="rounded border border-black/10 p-1 text-black/60 disabled:opacity-25"><ChevronUp className="h-3 w-3" /></button><button type="button" onClick={() => moveProject(idx, idx + 1)} disabled={idx === content.projects.length - 1} aria-label={`Move ${proj.title} down`} className="rounded border border-black/10 p-1 text-black/60 disabled:opacity-25"><ChevronDown className="h-3 w-3" /></button></div>
+                      <button onClick={e => { const row = e.currentTarget.closest('[data-project-index]'); const parent = adminProjectsRef.current; if (row && parent) setEditFormTop(row.getBoundingClientRect().bottom - parent.getBoundingClientRect().top + 12); setEditingProject(proj); setProjectForm({ ...proj }); setMediaDrafts(proj.media?.length ? proj.media : [{ url: proj.image, type: proj.mediaType || 'image' }]); setCoverIndex(Math.max(0, (proj.media || []).findIndex(m => (m.thumbnailUrl || m.url) === proj.image))); setCategoryDraft(proj.category); setIsAddingProject(false); window.requestAnimationFrame(() => editFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })); }} className="rounded-lg border border-black/10 p-2 hover:bg-[#f6f5f1]" title="Edit"><Edit2 className="h-3.5 w-3.5 text-black/70" /></button>
                       <button onClick={() => handleDeleteProject(proj.id)} className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   </div>
@@ -1263,12 +1318,12 @@ export default function App() {
         </nav>
 
         <button
-          className="focus-ring rounded-full border border-black/20 px-4 py-2 text-xs font-bold md:hidden"
+          className="focus-ring flex h-10 w-10 items-center justify-center rounded-full border border-black/20 md:hidden"
           onClick={() => setMenuOpen(v => !v)}
           aria-expanded={menuOpen}
           aria-label="Toggle navigation"
         >
-          {menuOpen ? 'Close' : 'Menu'}
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </header>
 
