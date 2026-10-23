@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { supabase } from './supabase';
 import {
   ArrowUpRight,
   Copy,
@@ -276,10 +277,7 @@ const DEFAULT_CONTENT: PortfolioContent = {
 };
 
 const STORAGE_KEY = 'resham-portfolio-content-v6';
-const ADMIN_USERNAME = 'batmanreshh';
 const LEGACY_ADMIN_EMAIL = 'batmanresh007@gmail.com';
-const ADMIN_PASSWORD = 'admin123';
-const ADMIN_PASSWORD_KEY = 'resham-portfolio-admin-password';
 
 function loadContent(): PortfolioContent {
   try {
@@ -456,6 +454,7 @@ function ExperienceRow({ item, index }: { item: Experience; index: number }) {
 function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
   const mediaItems: NonNullable<Project['media']> = item.media?.length ? item.media : [{ url: item.image, type: (item.mediaType || 'image') as 'image' | 'video', thumbnailUrl: undefined }];
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [focusPhoto, setFocusPhoto] = useState(false);
   const activeMedia = mediaItems[activeMediaIndex] || mediaItems[0];
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -473,13 +472,16 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
 
   return (
     <div
-      className="lightbox-backdrop fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-2 md:p-10"
+      className="lightbox-backdrop fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-2 md:p-3"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
       aria-label={item.title}
     >
-      <div className="lightbox-panel relative flex h-full max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl overflow-hidden bg-[#171715] shadow-2xl">
+      <div className="lightbox-panel relative flex h-[calc(100svh-16px)] max-h-[96svh] w-[calc(100vw-16px)] max-w-[1600px] flex-col rounded-2xl overflow-hidden bg-[#171715] shadow-2xl md:h-[94svh] md:w-[96vw]">
+        <button type="button" onClick={() => setFocusPhoto(value => !value)} className="absolute left-4 top-4 z-10 rounded-full border border-white/15 bg-black/65 px-3.5 py-2 text-[11px] font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/20" aria-pressed={focusPhoto}>
+          {focusPhoto ? 'Show project details' : 'Expand photo'}
+        </button>
         {/* Close */}
         <button
           onClick={onClose}
@@ -490,17 +492,17 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
         </button>
 
         {/* Media */}
-        <div className="lightbox-content flex min-h-0 flex-1 flex-col bg-[#10100f] p-3 md:p-5">
+        <div className={`lightbox-content flex min-h-0 flex-1 flex-col bg-[#10100f] ${focusPhoto ? 'p-0' : 'p-2 md:p-3'}`}>
           <div className="project-viewer-media relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black">
             {activeMedia?.type === 'video' ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay className="h-full max-h-full w-full object-contain" /> : <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="h-full max-h-full w-full object-contain" />}
             {mediaItems.length > 1 && <><button type="button" onClick={() => setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length)} aria-label="Previous media" className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/85"><ChevronLeft className="h-5 w-5" /></button><button type="button" onClick={() => setActiveMediaIndex(index => (index + 1) % mediaItems.length)} aria-label="Next media" className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/85"><ChevronRight className="h-5 w-5" /></button></>}
             {mediaItems.length > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1.5 font-mono text-[10px] text-white">{String(activeMediaIndex + 1).padStart(2, '0')} / {String(mediaItems.length).padStart(2, '0')}</span>}
           </div>
-          {mediaItems.length > 1 && <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{mediaItems.map((media, index) => <button key={`${media.url}-${index}`} onClick={() => setActiveMediaIndex(index)} aria-label={`Show media ${index + 1}`} aria-pressed={activeMediaIndex === index} className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 ${activeMediaIndex === index ? 'border-[#e48967]' : 'border-white/10 opacity-60 hover:opacity-100'}`}>{media.thumbnailUrl ? <img src={media.thumbnailUrl} alt="" className="h-full w-full object-cover" /> : media.type === 'video' ? <span className="flex h-full items-center justify-center bg-[#292927] text-white"><Film className="h-4 w-4" /></span> : <img src={media.url} alt="" className="h-full w-full object-cover" />}</button>)}</div>}
+          {!focusPhoto && mediaItems.length > 1 && <div className="mt-2 flex gap-2 overflow-x-auto px-1 pb-1">{mediaItems.map((media, index) => <button key={`${media.url}-${index}`} onClick={() => setActiveMediaIndex(index)} aria-label={`Show photo ${index + 1} of ${mediaItems.length}`} aria-pressed={activeMediaIndex === index} className={`relative h-12 w-[72px] shrink-0 overflow-hidden rounded-lg border-2 transition-opacity md:h-14 md:w-20 ${activeMediaIndex === index ? 'border-[#e48967]' : 'border-white/10 opacity-60 hover:opacity-100'}`}>{media.thumbnailUrl ? <img src={media.thumbnailUrl} alt="" className="h-full w-full object-cover" /> : media.type === 'video' ? <span className="flex h-full items-center justify-center bg-[#292927] text-white"><Film className="h-4 w-4" /></span> : <img src={media.url} alt="" className="h-full w-full object-cover" />}</button>)}</div>}
         </div>
 
         {/* Info bar */}
-        <div className="lightbox-info shrink-0 border-t border-white/10 px-6 py-5 text-white">
+        {!focusPhoto && <div className="lightbox-info shrink-0 border-t border-white/10 px-4 py-3 text-white md:px-6 md:py-4">
           <button onClick={onClose} className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs font-bold text-white md:hidden" aria-label="Back to work"><ChevronLeft className="h-4 w-4" /> Back to work</button>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -525,7 +527,7 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
               View project ↗
             </a>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );
@@ -549,12 +551,16 @@ function AdminPortal({
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   const [activeTab, setActiveTab] = useState<'projects' | 'experience' | 'profile' | 'pages' | 'json'>('projects');
   const [statusMsg, setStatusMsg] = useState('');
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => setAuthenticated(Boolean(data.session)));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setAuthenticated(Boolean(session)));
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   // Project form
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -575,6 +581,7 @@ function AdminPortal({
   // Experience form
   const [editingExp, setEditingExp] = useState<Experience | null>(null);
   const [isAddingExp, setIsAddingExp] = useState(false);
+  const [draggedExpIndex, setDraggedExpIndex] = useState<number | null>(null);
   const [expForm, setExpForm] = useState<Partial<Experience>>({
     role: '', organization: '', period: '', impactBadge: '', summary: ''
   });
@@ -623,30 +630,12 @@ function AdminPortal({
     window.setTimeout(() => setStatusMsg(''), 2500);
   };
 
-  const handleLogin = (e: FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    if (!loginEmail.trim()) { setLoginError('Enter your admin username.'); return; }
-    if (!loginPassword) {
-      setLoginError('Enter your password.');
-      return;
-    }
-    if (loginEmail.trim().toLowerCase() === ADMIN_USERNAME && loginPassword === (localStorage.getItem(ADMIN_PASSWORD_KEY) || ADMIN_PASSWORD)) {
-      setAuthenticated(true);
-      setLoginError('');
-    } else {
-      setLoginError('Email or password is incorrect.');
-    }
-  };
-
-  const handleChangePassword = (e: FormEvent) => {
-    e.preventDefault();
-    const savedPassword = localStorage.getItem(ADMIN_PASSWORD_KEY) || ADMIN_PASSWORD;
-    if (currentPassword !== savedPassword) { notify('Current password does not match.'); return; }
-    if (newPassword.length < 8) { notify('Use at least 8 characters for the new password.'); return; }
-    if (newPassword !== confirmPassword) { notify('New passwords do not match.'); return; }
-    localStorage.setItem(ADMIN_PASSWORD_KEY, newPassword);
-    setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
-    notify('Password changed.');
+    if (!supabase) { setLoginError('Supabase is not configured yet. Add the project URL and anon key to the deployment environment.'); return; }
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail.trim(), password: loginPassword });
+    if (error) setLoginError(error.message);
+    else setLoginError('');
   };
 
   // --- PROJECT CRUD ---
@@ -759,6 +748,14 @@ function AdminPortal({
     }
   };
 
+  const moveExperience = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= content.experience.length || fromIndex === toIndex) return;
+    const experience = [...content.experience];
+    const [moved] = experience.splice(fromIndex, 1);
+    experience.splice(toIndex, 0, moved);
+    onUpdateContent({ ...content, experience });
+  };
+
   // --- PROFILE SAVE ---
   const handleSaveProfile = (e: FormEvent) => {
     e.preventDefault();
@@ -815,10 +812,10 @@ function AdminPortal({
             <div>
               <label className="text-[11px] font-bold text-black/60 block mb-1">Username</label>
               <input
-                type="text" required autoFocus
+                type="email" required autoFocus
                 value={loginEmail}
                 onChange={e => setLoginEmail(e.target.value)}
-                placeholder="Admin username"
+                placeholder="Admin email from Supabase Auth"
                 className={inputCls}
               />
             </div>
@@ -867,6 +864,7 @@ function AdminPortal({
               <p className="text-xs text-black/50">Full CRUD — Work, Experience, Hero Copy</p>
             </div>
           </div>
+          <button type="button" onClick={() => { void supabase?.auth.signOut(); }} className="mr-2 rounded-full border border-black/15 px-3 py-2 text-xs font-semibold text-black/60 hover:bg-black/5">Sign out</button>
           <button
             onClick={onClose}
             className="rounded-full border border-black/20 p-2 transition-colors hover:bg-black hover:text-white"
@@ -1036,10 +1034,10 @@ function AdminPortal({
                 )}
               </div>
 
-              {(isAddingExp || editingExp) && (
+              {isAddingExp && (
                 <form onSubmit={handleSaveExperience} className="rounded-2xl border border-black/15 bg-white p-5 space-y-4">
                   <div className="flex items-center justify-between border-b border-black/10 pb-3">
-                    <h4 className="text-sm font-bold">{editingExp ? 'Edit Role' : 'Add Role'}</h4>
+                    <h4 className="text-sm font-bold">Add Role</h4>
                     <button type="button" onClick={() => { setIsAddingExp(false); setEditingExp(null); }} className="text-xs text-black/50 hover:text-black font-semibold">Cancel</button>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -1075,7 +1073,8 @@ function AdminPortal({
 
               <div className="space-y-3">
                 {content.experience.map((exp, idx) => (
-                  <div key={exp.id || idx} className="flex items-start justify-between gap-4 rounded-xl border border-black/10 bg-white p-4">
+                  <div key={exp.id || idx} draggable onDragStart={() => setDraggedExpIndex(idx)} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (draggedExpIndex !== null) moveExperience(draggedExpIndex, idx); setDraggedExpIndex(null); }} onDragEnd={() => setDraggedExpIndex(null)} className={`rounded-xl border border-black/10 bg-white ${draggedExpIndex === idx ? 'opacity-50' : ''}`}>
+                  <div className="flex items-start justify-between gap-4 p-4">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-bold text-[#bd5938]">{exp.period}</span>
@@ -1087,9 +1086,22 @@ function AdminPortal({
                       <p className="text-xs text-black/70 mt-2 leading-relaxed">{exp.summary}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <button onClick={() => { setEditingExp(exp); setExpForm({ ...exp }); setIsAddingExp(false); }} className="rounded-lg border border-black/10 p-2 hover:bg-[#f6f5f1]" title="Edit"><Edit2 className="h-3.5 w-3.5 text-black/70" /></button>
+                      <button type="button" aria-label={`Drag to reorder ${exp.role}`} className="cursor-grab touch-none rounded-lg border border-black/10 p-2 text-black/40 active:cursor-grabbing"><GripVertical className="h-3.5 w-3.5" /></button>
+                      <button type="button" onClick={() => moveExperience(idx, idx - 1)} disabled={idx === 0} aria-label={`Move ${exp.role} up`} className="rounded border border-black/10 p-2 text-black/60 disabled:opacity-25"><ChevronUp className="h-3.5 w-3.5" /></button>
+                      <button type="button" onClick={() => moveExperience(idx, idx + 1)} disabled={idx === content.experience.length - 1} aria-label={`Move ${exp.role} down`} className="rounded border border-black/10 p-2 text-black/60 disabled:opacity-25"><ChevronDown className="h-3.5 w-3.5" /></button>
+                      <button type="button" onClick={() => { setEditingExp(exp); setExpForm({ ...exp }); setIsAddingExp(false); }} className="rounded-lg border border-black/10 p-2 hover:bg-[#f6f5f1]" title="Edit"><Edit2 className="h-3.5 w-3.5 text-black/70" /></button>
                       <button onClick={() => handleDeleteExperience(idx)} className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
+                  </div>
+                  {editingExp && (editingExp.id || editingExp.role) === (exp.id || exp.role) && (
+                    <form onSubmit={handleSaveExperience} className="mx-4 mb-4 rounded-2xl border border-black/15 bg-[#f6f5f1] p-5 space-y-4">
+                      <div className="flex items-center justify-between border-b border-black/10 pb-3"><h4 className="text-sm font-bold">Edit Role</h4><button type="button" onClick={() => setEditingExp(null)} className="text-xs text-black/50 hover:text-black font-semibold">Cancel</button></div>
+                      <div className="grid gap-3 sm:grid-cols-2"><div><label className="text-[11px] font-bold text-black/70 block mb-1">Role Title *</label><input type="text" required value={expForm.role || ''} onChange={e => setExpForm({ ...expForm, role: e.target.value })} className={inputCls} /></div><div><label className="text-[11px] font-bold text-black/70 block mb-1">Organization *</label><input type="text" required value={expForm.organization || ''} onChange={e => setExpForm({ ...expForm, organization: e.target.value })} className={inputCls} /></div></div>
+                      <div className="grid gap-3 sm:grid-cols-2"><div><label className="text-[11px] font-bold text-black/70 block mb-1">Period</label><input type="text" value={expForm.period || ''} onChange={e => setExpForm({ ...expForm, period: e.target.value })} className={inputCls} /></div><div><label className="text-[11px] font-bold text-black/70 block mb-1">Impact Badge</label><input type="text" value={expForm.impactBadge || ''} onChange={e => setExpForm({ ...expForm, impactBadge: e.target.value })} className={inputCls} /></div></div>
+                      <div><label className="text-[11px] font-bold text-black/70 block mb-1">One-line Story *</label><textarea rows={3} required value={expForm.summary || ''} onChange={e => setExpForm({ ...expForm, summary: e.target.value })} className={inputCls} /></div>
+                      <button type="submit" className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-black py-2.5 text-xs font-bold text-white"><Save className="h-3.5 w-3.5" /><span>Save Role</span></button>
+                    </form>
+                  )}
                   </div>
                 ))}
               </div>
@@ -1117,7 +1129,7 @@ function AdminPortal({
                 <Save className="h-3.5 w-3.5" /><span>Save Profile</span>
               </button>
             </form>
-            <form onSubmit={handleChangePassword} className="space-y-3 rounded-2xl border border-black/10 bg-white p-5"><div><h3 className="text-base font-bold">Change admin password</h3><p className="text-xs text-black/50">Choose a new password with at least 8 characters.</p></div><input type="password" required value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="Current password" className={inputCls} /><input type="password" required value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New password" className={inputCls} /><input type="password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className={inputCls} /><button type="submit" className="rounded-xl bg-black px-5 py-2.5 text-xs font-bold text-white">Update password</button></form></div>
+            </div>
           )}
 
           {/* PAGE CONTENT */}
@@ -1189,6 +1201,18 @@ export default function App() {
   const [lightboxItem, setLightboxItem] = useState<Project | null>(null);
   const [impactVisible, setImpactVisible] = useState(false);
   const impactRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.from('portfolio_content').select('content').eq('id', 1).maybeSingle().then(({ data, error }) => {
+      if (error) { console.error('Could not load portfolio content from Supabase:', error.message); return; }
+      if (data?.content) {
+        const remote = { ...DEFAULT_CONTENT, ...(data.content as Partial<PortfolioContent>) };
+        setContent(remote);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(remote)); } catch { /* Remote content remains available. */ }
+      }
+    });
+  }, []);
   const nav = [
     { id: 'work', label: 'Work' },
     { id: 'impact', label: 'Impact' },
@@ -1271,18 +1295,20 @@ export default function App() {
     return () => obs.disconnect();
   }, []);
 
-  const handleUpdateContent = (updated: PortfolioContent) => {
+  const handleUpdateContent = async (updated: PortfolioContent) => {
     try {
+      if (!supabase) throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      const { error } = await supabase.from('portfolio_content').upsert({ id: 1, content: updated });
+      if (error) throw error;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       setContent(updated);
-    } catch {
-      window.alert('Your changes could not be saved in this browser. Try removing large media files or clearing some storage, then save again.');
+    } catch (error) {
+      window.alert(`Your changes could not be saved to Supabase: ${(error as Error).message}`);
     }
   };
 
   const resetContent = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setContent(DEFAULT_CONTENT);
+    void handleUpdateContent(DEFAULT_CONTENT);
   };
 
   const closeAdmin = () => {
