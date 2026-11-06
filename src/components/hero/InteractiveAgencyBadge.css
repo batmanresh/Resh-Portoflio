@@ -1,128 +1,34 @@
-.agency-badge-stage {
-  --badge-ink: #211f1c;
-  --badge-paper: #f0ede5;
-  --badge-rust: #bd5938;
-  position: relative;
-  width: min(100%, 470px);
-  height: 590px;
-  perspective: 1400px;
-  isolation: isolate;
-  user-select: none;
-}
-.agency-badge-index,.agency-badge-caption {
-  position:absolute; left:0; right:0; display:flex; justify-content:space-between;
-  color:rgba(35,32,28,.43); font:9px/1.2 'DM Mono',monospace; letter-spacing:.13em;
-}
-.agency-badge-index { top:7px; }
-.agency-badge-caption { bottom:2px; }
-.agency-lanyard {
-  position:absolute; z-index:1; width:310px; height:205px; top:34px; left:50%;
-  transform:translateX(-50%); overflow:visible; filter:drop-shadow(0 3px 2px rgba(0,0,0,.12));
-}
-.agency-badge-drag-zone {
-  position:absolute; z-index:2; top:203px; left:50%; width:274px; height:365px;
-  margin-left:-137px; cursor:grab; touch-action:pan-y; outline:none;
-  transform-style:preserve-3d; will-change:transform;
-}
-.agency-badge-drag-zone.is-dragging { cursor:grabbing; }
-.agency-badge-drag-zone:focus-visible .agency-badge-card { outline:2px solid var(--badge-rust); outline-offset:6px; }
-.agency-badge-card {
-  position:relative; width:100%; height:100%; transform-style:preserve-3d;
-  transition:transform 760ms cubic-bezier(.2,.72,.18,1);
-}
-.agency-badge-card.is-flipped { transform:rotateY(180deg); }
-.agency-badge-face {
-  position:absolute; inset:0; overflow:hidden; backface-visibility:hidden;
-  border:1px solid rgba(255,255,255,.72); border-radius:13px;
-  box-shadow:0 28px 48px -23px rgba(32,27,21,.45),0 8px 18px -10px rgba(32,27,21,.25),inset 0 0 0 1px rgba(30,27,22,.06);
-}
-.agency-badge-front {
-  display:flex; flex-direction:column; padding:18px 18px 15px; color:var(--badge-paper);
-  background:linear-gradient(145deg,#393630 0%,#242320 48%,#191918 100%);
-}
-.agency-badge-front:before {
-  content:""; position:absolute; inset:0; pointer-events:none; opacity:.16;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.28'/%3E%3C/svg%3E");
-}
-.badge-topline,.badge-back-head { display:flex; align-items:center; justify-content:space-between; position:relative; z-index:1; }
-.badge-brand { font-size:20px; font-weight:850; letter-spacing:-.07em; }
-.badge-brand span { color:#d47a58; }
-.badge-access,.badge-back-head>span:last-child { font:8px 'DM Mono',monospace; letter-spacing:.13em; color:rgba(240,237,229,.57); }
-.badge-portrait {
-  position:relative; width:100%; height:171px; margin-top:16px; overflow:hidden;
-  background:#d8d0c3; border:5px solid rgba(242,237,226,.08);
-}
-.badge-portrait img { width:100%; height:100%; display:block; object-fit:cover; object-position:center 34%; filter:saturate(.82) contrast(1.02); }
-.badge-monogram {
-  width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  color:#37312a; background:radial-gradient(circle at 50% 34%,#e9e0d2,#c9bbaa 72%);
-}
-.badge-monogram span { font:italic 74px/.9 Georgia,serif; letter-spacing:-.09em; }
-.badge-monogram small { margin-top:13px; font:8px 'DM Mono',monospace; letter-spacing:.2em; opacity:.58; }
-.portrait-corner { position:absolute; width:13px; height:13px; border-color:#d2a18c; border-style:solid; }
-.portrait-corner-tl { top:5px; left:5px; border-width:1px 0 0 1px; }
-.portrait-corner-br { bottom:5px; right:5px; border-width:0 1px 1px 0; }
-.badge-identity { position:relative; z-index:1; margin-top:14px; }
-.badge-overline,.badge-back-kicker { margin:0 0 6px; color:#d17b5a; font:8px 'DM Mono',monospace; letter-spacing:.13em; }
-.badge-identity h2 { margin:0; font-size:27px; line-height:1; font-weight:800; letter-spacing:-.055em; }
-.badge-role { max-width:225px; margin:7px 0 0; color:rgba(240,237,229,.67); font-size:10px; line-height:1.45; }
-.badge-footer { display:flex; align-items:flex-end; gap:22px; margin-top:auto; padding-top:13px; border-top:1px solid rgba(240,237,229,.17); position:relative; z-index:1; }
-.badge-footer div { display:flex; flex-direction:column; gap:4px; }
-.badge-footer span { color:rgba(240,237,229,.45); font:7px 'DM Mono',monospace; letter-spacing:.12em; }
-.badge-footer strong { font-size:9px; font-weight:650; }
-.badge-footer .badge-id { margin-left:auto; }
-.badge-stamp { display:grid; place-items:center; width:27px; height:27px; border:1px solid rgba(211,123,91,.75); border-radius:50%; color:#d47b5a!important; font:italic 10px Georgia,serif!important; letter-spacing:-.04em!important; }
-.badge-edge-code { position:absolute; right:0; bottom:4px; color:rgba(240,237,229,.2); writing-mode:vertical-rl; font:6px 'DM Mono',monospace; letter-spacing:.12em; }
-.agency-badge-back {
-  display:flex; flex-direction:column; padding:20px 19px 17px; color:#27231f;
-  background:linear-gradient(150deg,#f4f0e7,#e5dfd3 100%); transform:rotateY(180deg);
-}
-.agency-badge-back:after {
-  content:""; position:absolute; inset:0; pointer-events:none; opacity:.11;
-  background-image:repeating-linear-gradient(0deg,transparent 0 3px,rgba(49,43,35,.12) 4px);
-}
-.badge-back-head { padding-bottom:14px; border-bottom:1px solid rgba(39,35,31,.17); }
-.badge-back-head .badge-brand { color:#27231f; }
-.badge-back-head>span:last-child { color:rgba(39,35,31,.48); }
-.badge-back-kicker { margin-top:23px; color:var(--badge-rust); }
-.badge-capabilities { position:relative; z-index:1; }
-.badge-capability { display:grid; grid-template-columns:25px 1fr 15px; align-items:center; gap:5px; min-height:39px; border-bottom:1px solid rgba(39,35,31,.13); }
-.badge-capability span { color:var(--badge-rust); font:8px 'DM Mono',monospace; }
-.badge-capability strong { font-size:11px; font-weight:650; letter-spacing:-.02em; }
-.badge-capability svg { color:rgba(39,35,31,.38); }
-.badge-back-bottom { display:flex; align-items:flex-end; justify-content:space-between; margin-top:auto; padding-top:13px; }
-.badge-back-bottom>div:last-child { display:flex; flex-direction:column; gap:4px; text-align:right; }
-.badge-back-bottom>div:last-child span { color:rgba(39,35,31,.48); font:7px 'DM Mono',monospace; letter-spacing:.13em; }
-.badge-back-bottom>div:last-child strong { font:italic 12px Georgia,serif; color:var(--badge-rust); }
-.badge-pattern { display:grid; grid-template-columns:repeat(7,4px); gap:2px; width:40px; }
-.badge-pattern i { width:4px; height:4px; background:#39342e; opacity:.65; }
-.badge-pattern i:nth-child(3n),.badge-pattern i:nth-child(7n+1) { opacity:.16; }
-.badge-back-serial { position:absolute; bottom:7px; left:19px; color:rgba(39,35,31,.36); font:6px 'DM Mono',monospace; letter-spacing:.16em; }
-.agency-badge-hint {
-  position:absolute; left:50%; bottom:36px; transform:translateX(-50%);
-  display:flex; align-items:center; gap:8px; white-space:nowrap; color:rgba(35,32,28,.58);
-  font:8px 'DM Mono',monospace; letter-spacing:.13em;
-}
-.badge-hint-icon { display:grid; place-items:center; width:24px; height:24px; border:1px solid rgba(35,32,28,.2); border-radius:50%; color:var(--badge-rust); }
-.agency-badge-hint i { color:var(--badge-rust); font-style:normal; }
-.is-reduced-motion .agency-badge-card { transition-duration:1ms; }
-@media (max-width:1023px) {
-  .agency-badge-stage { height:550px; }
-  .agency-badge-index,.agency-badge-caption { max-width:420px; left:50%; transform:translateX(-50%); width:100%; }
-}
-@media (max-width:640px) {
-  .agency-badge-stage { height:510px; max-width:390px; }
-  .agency-lanyard { top:24px; transform:translateX(-50%) scale(.9); transform-origin:top center; }
-  .agency-badge-drag-zone { top:183px; transform-origin:top center; width:254px; height:339px; margin-left:-127px; }
-  .agency-badge-front { padding:15px 16px 13px; }
-  .badge-portrait { height:150px; margin-top:12px; }
-  .badge-identity { margin-top:11px; }
-  .badge-identity h2 { font-size:24px; }
-  .agency-badge-back { padding:17px 16px 15px; }
-  .badge-capability { min-height:36px; }
-  .badge-capability strong { font-size:10px; }
-  .agency-badge-hint { bottom:25px; }
-}
-@media (prefers-reduced-motion:reduce) {
-  .agency-badge-card { transition:none!important; }
-}
+.agency-pass-stage{--pass-ink:#171715;--pass-olive:#8c8e5b;position:relative;width:min(100%,460px);height:590px;perspective:1200px;isolation:isolate;user-select:none}
+.agency-pass-meta{position:absolute;top:7px;left:0;right:0;display:flex;justify-content:space-between;color:rgba(23,23,21,.4);font:8px 'DM Mono',monospace;letter-spacing:.14em}
+.agency-pass-swing{position:absolute;top:35px;left:50%;width:250px;height:500px;margin-left:-125px;transform-origin:50% 0;animation:pass-pendulum 5.2s ease-in-out infinite}
+.agency-pass-stage.is-dragging .agency-pass-swing{animation-play-state:paused}
+.agency-pass-lanyard{position:absolute;top:0;left:50%;width:160px;height:230px;margin-left:-80px;overflow:visible;filter:drop-shadow(0 2px 2px rgba(0,0,0,.08))}
+.agency-pass-interaction{position:absolute;top:190px;left:50%;width:226px;height:306px;margin-left:-113px;cursor:grab;touch-action:pan-y;outline:none;transform-style:preserve-3d;will-change:transform}
+.agency-pass-stage.is-dragging .agency-pass-interaction{cursor:grabbing}
+.agency-pass-interaction:focus-visible .agency-pass-card{outline:2px solid var(--pass-olive);outline-offset:6px}
+.agency-pass-card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 720ms cubic-bezier(.2,.72,.18,1)}
+.agency-pass-card.is-flipped{transform:rotateY(180deg)}
+.agency-pass-face{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;border:1px solid rgba(23,23,21,.12);border-radius:5px;background:#fff;box-shadow:0 22px 36px -18px rgba(23,23,21,.28),0 5px 12px -8px rgba(23,23,21,.18)}
+.agency-pass-front{display:flex;flex-direction:column;align-items:center;padding:19px 18px 14px;color:var(--pass-ink)}
+.agency-pass-front h2{margin:0 0 13px;font-size:18px;line-height:1.15;font-weight:750;letter-spacing:-.045em;text-align:center}
+.agency-pass-photo{position:relative;width:100%;height:158px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#f1f0eb}
+.agency-pass-photo img{width:100%;height:100%;object-fit:cover;object-position:center 32%;filter:grayscale(1) contrast(1.05);display:block}
+.agency-pass-placeholder{display:grid;place-items:center;width:100%;height:100%;background:linear-gradient(145deg,#f0eee8,#d8d5cc);color:#4d4a42}
+.agency-pass-placeholder span{font:italic 72px/.9 Georgia,serif;letter-spacing:-.09em}
+.agency-pass-role{align-self:flex-start;margin-top:13px;max-width:190px;font-size:22px;line-height:.98;font-weight:800;letter-spacing:-.065em}
+.agency-pass-location{align-self:flex-start;margin-top:auto;padding-top:10px;color:rgba(23,23,21,.53);font:8px 'DM Mono',monospace;letter-spacing:.14em;text-transform:uppercase}
+.agency-pass-serial{position:absolute;right:13px;bottom:14px;color:rgba(23,23,21,.32);font:7px 'DM Mono',monospace;letter-spacing:.1em}
+.agency-pass-reverse{display:flex;flex-direction:column;padding:22px 19px 17px;color:#171715;background:linear-gradient(145deg,#fff,#f2f1eb);transform:rotateY(180deg)}
+.agency-pass-reverse-kicker{color:var(--pass-olive);font:8px 'DM Mono',monospace;letter-spacing:.14em}
+.agency-pass-reverse h2{margin:35px 0 26px;font-size:27px;line-height:1.03;font-weight:800;letter-spacing:-.06em}
+.agency-pass-skills{display:flex;flex-direction:column}
+.agency-pass-skills div{display:grid;grid-template-columns:23px 1fr 15px;align-items:center;gap:5px;padding:11px 0;border-top:1px solid rgba(23,23,21,.13);font-size:10px;font-weight:650}
+.agency-pass-skills span{color:var(--pass-olive);font:8px 'DM Mono',monospace}
+.agency-pass-skills svg{color:rgba(23,23,21,.35)}
+.agency-pass-instruction{position:absolute;bottom:33px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;color:rgba(23,23,21,.48);white-space:nowrap;font:8px 'DM Mono',monospace;letter-spacing:.14em}
+.agency-pass-instruction svg{color:var(--pass-olive)}
+.agency-pass-instruction i{font-style:normal;color:var(--pass-olive)}
+@keyframes pass-pendulum{0%,100%{transform:rotate(-2.1deg)}50%{transform:rotate(2.1deg)}}
+@media(max-width:1023px){.agency-pass-stage{height:550px}.agency-pass-meta{max-width:420px;left:50%;right:auto;width:100%;transform:translateX(-50%)}}
+@media(max-width:640px){.agency-pass-stage{height:500px;max-width:390px}.agency-pass-swing{top:28px;transform:scale(.92);transform-origin:top center}.agency-pass-instruction{bottom:23px}}
+@media(prefers-reduced-motion:reduce){.agency-pass-swing{animation:none!important}.agency-pass-card{transition:none!important}}
