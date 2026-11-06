@@ -59,6 +59,14 @@ export type Principle = {
   copy: string;
 };
 
+export type EditorialBoard = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  description?: string;
+  images: { id: string; url: string; alt: string; caption?: string }[];
+};
+
 export type PortfolioContent = {
   name: string;
   roleLine: string;
@@ -82,6 +90,7 @@ export type PortfolioContent = {
   experience: Experience[];
   projects: Project[];
   principles: Principle[];
+  editorialBoards: EditorialBoard[];
   contactHeading?: string;
   contactAccent?: string;
   contactDescription?: string;
@@ -252,6 +261,28 @@ const DEFAULT_CONTENT: PortfolioContent = {
       mediaType: 'image',
       image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1400&q=85',
       outcome: 'Brokered multi-brand partnerships driving recurring referral traffic and brand equity.'
+    }
+  ],
+  editorialBoards: [
+    {
+      id: 'board-before',
+      eyebrow: 'A visual point of view',
+      title: 'Ideas take shape.',
+      description: '',
+      images: [
+        { id: 'board-before-1', url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/All_g0udqd.jpg', alt: 'Creative campaign collage and visual direction', caption: 'Visual direction' },
+        { id: 'board-before-2', url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5802_tfxp7t.jpg', alt: 'Behind-the-scenes creative work', caption: 'In the moment' }
+      ]
+    },
+    {
+      id: 'board-after',
+      eyebrow: 'Outside the case study',
+      title: 'The details matter.',
+      description: '',
+      images: [
+        { id: 'board-after-1', url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5810_s0qev9.jpg', alt: 'Creative production and campaign detail', caption: 'The details' },
+        { id: 'board-after-2', url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/Birdal1_ss9kr2.jpg', alt: 'Editorial campaign moment', caption: 'The finish' }
+      ]
     }
   ],
   principles: [
@@ -452,16 +483,7 @@ function ExperienceRow({ item, index }: { item: Experience; index: number }) {
 // LIGHTBOX
 // ============================================================================
 function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
-  const suppliedAssets: NonNullable<Project['media']> = [
-    { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/All_g0udqd.jpg', type: 'image' as const },
-    { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5802_tfxp7t.jpg', type: 'image' as const },
-    { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5810_s0qev9.jpg', type: 'image' as const },
-    { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/Birdal1_ss9kr2.jpg', type: 'image' as const }
-  ];
-  const baseMedia: NonNullable<Project['media']> = item.media?.length ? item.media : [{ url: item.image, type: (item.mediaType || 'image') as 'image' | 'video' }];
-  const mediaItems = item.id === 'asteria-launch'
-    ? [...baseMedia, ...suppliedAssets.filter(asset => !baseMedia.some(media => media.url === asset.url))]
-    : baseMedia;
+  const mediaItems: NonNullable<Project['media']> = item.media?.length ? item.media : [{ url: item.image, type: (item.mediaType || 'image') as 'image' | 'video' }];
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [focusPhoto, setFocusPhoto] = useState(false);
   const activeMedia = mediaItems[activeMediaIndex] || mediaItems[0];
@@ -532,6 +554,70 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
   );
 }
 
+// ============================================================================
+// EDITORIAL BOARDS — INTERACTIVE IMAGE EXPLORER
+// ============================================================================
+function EditorialBoardView({ board, index }: { board: EditorialBoard; index: number }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [focusedImage, setFocusedImage] = useState<number | null>(null);
+  const images = board.images || [];
+  const activeImage = images[activeIndex];
+
+  useEffect(() => {
+    if (focusedImage === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFocusedImage(null);
+      if (event.key === 'ArrowRight') setFocusedImage(current => current === null ? null : (current + 1) % images.length);
+      if (event.key === 'ArrowLeft') setFocusedImage(current => current === null ? null : (current - 1 + images.length) % images.length);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [focusedImage, images.length]);
+
+  if (!images.length) return null;
+  const move = (direction: number) => setActiveIndex(current => (current + direction + images.length) % images.length);
+
+  return (
+    <section className={`editorial-board editorial-board-${index % 2 ? 'reverse' : 'normal'}`} aria-label={board.title || 'Editorial board'}>
+      <div className="editorial-board-inner">
+        <div className="editorial-board-heading">
+          {board.eyebrow && <p className="eyebrow">{board.eyebrow}</p>}
+          <h2>{board.title}</h2>
+          {board.description?.trim() && <p className="editorial-board-description">{board.description}</p>}
+          <div className="editorial-board-controls">
+            <span className="editorial-board-count">{String(activeIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}</span>
+            <button type="button" onClick={() => move(-1)} aria-label="Previous image"><ChevronLeft size={17}/></button>
+            <button type="button" onClick={() => move(1)} aria-label="Next image"><ChevronRight size={17}/></button>
+          </div>
+        </div>
+        <div className="editorial-board-gallery">
+          <button type="button" className="editorial-board-feature" onClick={() => setFocusedImage(activeIndex)} aria-label={`Open ${activeImage.alt || 'image'}`}>
+            <img key={activeImage.id || activeImage.url} src={activeImage.url} alt={activeImage.alt || board.title} />
+            <span className="editorial-board-open">Expand image ↗</span>
+            {activeImage.caption && <span className="editorial-board-caption">{activeImage.caption}</span>}
+          </button>
+          {images.length > 1 && <div className="editorial-board-thumbs" role="tablist" aria-label="Choose an image">
+            {images.map((image, imageIndex) => (
+              <button type="button" key={image.id || image.url} role="tab" aria-selected={activeIndex === imageIndex} className={activeIndex === imageIndex ? 'is-active' : ''} onClick={() => setActiveIndex(imageIndex)} aria-label={`Show image ${imageIndex + 1}`}>
+                <img src={image.url} alt="" loading="lazy"/>
+                <span>{String(imageIndex + 1).padStart(2, '0')}</span>
+              </button>
+            ))}
+          </div>}
+        </div>
+      </div>
+      {focusedImage !== null && images[focusedImage] && (
+        <div className="editorial-image-viewer" role="dialog" aria-modal="true" aria-label="Expanded editorial image" onClick={event => { if (event.target === event.currentTarget) setFocusedImage(null); }}>
+          <button type="button" className="editorial-image-close" onClick={() => setFocusedImage(null)} aria-label="Close image"><X/></button>
+          <button type="button" className="editorial-image-nav editorial-image-prev" onClick={() => setFocusedImage(current => current === null ? null : (current - 1 + images.length) % images.length)} aria-label="Previous image"><ChevronLeft/></button>
+          <img src={images[focusedImage].url} alt={images[focusedImage].alt || board.title}/>
+          <button type="button" className="editorial-image-nav editorial-image-next" onClick={() => setFocusedImage(current => current === null ? null : (current + 1) % images.length)} aria-label="Next image"><ChevronRight/></button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ADMIN PORTAL
 // ============================================================================
 function AdminPortal({
@@ -550,7 +636,7 @@ function AdminPortal({
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'projects' | 'experience' | 'profile' | 'pages' | 'json'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'boards' | 'experience' | 'profile' | 'pages' | 'json'>('projects');
   const [statusMsg, setStatusMsg] = useState('');
 
   useEffect(() => {
@@ -604,6 +690,7 @@ function AdminPortal({
   });
 
   const [jsonText, setJsonText] = useState(JSON.stringify(content, null, 2));
+  const [boardsDraft, setBoardsDraft] = useState<EditorialBoard[]>(content.editorialBoards || []);
 
   useEffect(() => {
     setProfileForm({
@@ -615,6 +702,7 @@ function AdminPortal({
       cvUrl: content.cvUrl
     });
     setJsonText(JSON.stringify(content, null, 2));
+    setBoardsDraft(content.editorialBoards || []);
     setPageForm({ projectsHeading: content.projectsHeading, projectsEyebrow: content.projectsEyebrow,
       impactHeading: content.impactHeading, impactEyebrow: content.impactEyebrow,
       experienceHeading: content.experienceHeading, experienceEyebrow: content.experienceEyebrow,
@@ -622,6 +710,21 @@ function AdminPortal({
       contactHeading: content.contactHeading || '', contactAccent: content.contactAccent || '', contactDescription: content.contactDescription || '',
       contactOptions: (content.contactOptions || []).join('\n'), metrics: content.metrics, principles: content.principles });
   }, [content]);
+
+  const saveBoards = (event: FormEvent) => {
+    event.preventDefault();
+    const cleaned = boardsDraft.map(board => ({
+      ...board,
+      eyebrow: board.eyebrow.trim(),
+      title: board.title.trim(),
+      description: (board.description || '').trim(),
+      images: (board.images || []).filter(image => image.url.trim()).map(image => ({ ...image, url: image.url.trim(), alt: image.alt.trim(), caption: (image.caption || '').trim() }))
+    }));
+    if (cleaned.some(board => !board.title)) { notify('Give each board a short title.'); return; }
+    if (cleaned.some(board => board.images.some(image => !/^https?:\\/\\//i.test(image.url)))) { notify('Each image needs a valid http or https URL.'); return; }
+    onUpdateContent({ ...content, editorialBoards: cleaned });
+    notify('Editorial boards saved.');
+  };
 
   const notify = (msg: string) => {
     setStatusMsg(msg);
@@ -881,6 +984,7 @@ function AdminPortal({
         <div className="admin-tabs flex border-b border-black/10 bg-[#eae8e1] px-6 text-xs font-bold">
           {([
             { key: 'projects', icon: <Layers className="h-3.5 w-3.5" />, label: `Work (${content.projects.length})` },
+            { key: 'boards', icon: <Film className="h-3.5 w-3.5" />, label: `Boards (${(content.editorialBoards || []).length})` },
             { key: 'experience', icon: <Briefcase className="h-3.5 w-3.5" />, label: `Exp (${content.experience.length})` },
             { key: 'profile', icon: <Sliders className="h-3.5 w-3.5" />, label: 'Hero & Profile' },
             { key: 'pages', icon: <FileText className="h-3.5 w-3.5" />, label: 'Page Content' },
@@ -1012,6 +1116,41 @@ function AdminPortal({
                 ))}
               </div>
             </div>
+          )}
+
+          {/* EDITORIAL BOARDS */}
+          {activeTab === 'boards' && (
+            <form onSubmit={saveBoards} className="space-y-6">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div><h3 className="text-lg font-bold text-black">Editorial boards</h3><p className="text-xs text-black/55">Manage the image stories shown around Selected Work.</p></div>
+                <button type="button" onClick={() => setBoardsDraft([...boardsDraft, { id: `board-${Date.now()}`, eyebrow: '', title: 'New board', description: '', images: [] }])} className="rounded-full bg-black px-4 py-2 text-xs font-bold text-white"><Plus className="mr-1 inline h-3.5 w-3.5"/>Add board</button>
+              </div>
+              {boardsDraft.map((board, boardIndex) => (
+                <section key={board.id} className="space-y-4 rounded-2xl border border-black/10 bg-white p-4 md:p-5">
+                  <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-bold uppercase tracking-widest text-[#bd5938]">Board {String(boardIndex + 1).padStart(2, '0')}</span><button type="button" onClick={() => setBoardsDraft(boardsDraft.filter((_, i) => i !== boardIndex))} className="rounded-lg border border-red-200 p-2 text-red-600" aria-label="Delete board"><Trash2 size={15}/></button></div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-[11px] font-bold">Small label<input value={board.eyebrow} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, eyebrow: e.target.value } : item))} placeholder="Optional" className={`${inputCls} mt-1`}/></label>
+                    <label className="text-[11px] font-bold">Board title *<input required value={board.title} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, title: e.target.value } : item))} className={`${inputCls} mt-1`}/></label>
+                  </div>
+                  <label className="block text-[11px] font-bold">Short description <span className="font-normal text-black/40">(optional)</span><textarea rows={2} value={board.description || ''} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, description: e.target.value } : item))} className={`${inputCls} mt-1`}/></label>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between"><h4 className="text-xs font-bold">Images ({board.images.length})</h4><button type="button" onClick={() => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: [...item.images, { id: `img-${Date.now()}`, url: '', alt: '', caption: '' }] } : item))} className="rounded-full border border-black/15 px-3 py-1.5 text-[10px] font-bold">+ Add image</button></div>
+                    {board.images.map((image, imageIndex) => (
+                      <div key={image.id || imageIndex} className="grid gap-3 rounded-xl bg-[#f6f5f1] p-3 sm:grid-cols-[88px_1fr]">
+                        <div className="h-20 overflow-hidden rounded-lg bg-black/10">{image.url && <img src={image.url} alt="" className="h-full w-full object-cover"/>}</div>
+                        <div className="min-w-0 space-y-2">
+                          <input type="url" value={image.url} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.map((asset, j) => j === imageIndex ? { ...asset, url: e.target.value } : asset) } : item))} placeholder="Image URL (https://...)" aria-label="Image URL" className={inputCls}/>
+                          <div className="grid gap-2 sm:grid-cols-2"><input value={image.alt} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.map((asset, j) => j === imageIndex ? { ...asset, alt: e.target.value } : asset) } : item))} placeholder="Image description (alt text)" aria-label="Image description" className={inputCls}/><input value={image.caption || ''} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.map((asset, j) => j === imageIndex ? { ...asset, caption: e.target.value } : asset) } : item))} placeholder="Caption (optional)" aria-label="Image caption" className={inputCls}/></div>
+                          <div className="flex justify-end gap-2"><button type="button" disabled={imageIndex === 0} onClick={() => setBoardsDraft(boardsDraft.map((item, i) => { if (i !== boardIndex) return item; const images = [...item.images]; [images[imageIndex - 1], images[imageIndex]] = [images[imageIndex], images[imageIndex - 1]]; return { ...item, images }; }))} className="rounded-lg border border-black/10 px-2 py-1 text-[10px] font-bold disabled:opacity-30">Move up</button><button type="button" disabled={imageIndex === board.images.length - 1} onClick={() => setBoardsDraft(boardsDraft.map((item, i) => { if (i !== boardIndex) return item; const images = [...item.images]; [images[imageIndex + 1], images[imageIndex]] = [images[imageIndex], images[imageIndex + 1]]; return { ...item, images }; }))} className="rounded-lg border border-black/10 px-2 py-1 text-[10px] font-bold disabled:opacity-30">Move down</button><button type="button" onClick={() => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.filter((_, j) => j !== imageIndex) } : item))} className="rounded-lg border border-red-200 px-2 py-1 text-[10px] font-bold text-red-600">Remove</button></div>
+                        </div>
+                      </div>
+                    ))}
+                    {!board.images.length && <p className="rounded-xl border border-dashed border-black/15 p-5 text-center text-xs text-black/45">No images yet. Add an image to make this board visible.</p>}
+                  </div>
+                </section>
+              ))}
+              <button type="submit" className="flex items-center gap-2 rounded-xl bg-black px-6 py-3 text-xs font-bold text-white"><Save size={15}/>Save editorial boards</button>
+            </form>
           )}
 
           {/* EXPERIENCE */}
@@ -1390,27 +1529,7 @@ export default function App() {
         {/* ================================================================ */}
         {/* 2. SELECTED WORK                                                 */}
         {/* ================================================================ */}
-                {/* VISUAL NOTES — before selected work */}
-        <section className="visual-notes visual-notes-before" aria-label="Visual notes and creative references">
-          <div className="visual-notes-inner">
-            <div className="visual-notes-heading">
-              <p className="eyebrow">A visual point of view / 01</p>
-              <h2>Ideas take shape<br/><em>before the spotlight.</em></h2>
-              <p>Fragments, references and moments that set the tone for the work.</p>
-            </div>
-            <div className="moodboard moodboard-before">
-              <figure className="moodboard-piece moodboard-piece-main">
-                <img src="https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/All_g0udqd.jpg" alt="Creative campaign collage and visual direction" loading="lazy"/>
-                <figcaption><span>01 / VISUAL LANGUAGE</span><span>COLLECT · COMPOSE · REFINE</span></figcaption>
-              </figure>
-              <figure className="moodboard-piece moodboard-piece-side">
-                <img src="https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5802_tfxp7t.jpg" alt="Behind-the-scenes creative work" loading="lazy"/>
-                <figcaption><span>02 / IN THE MOMENT</span></figcaption>
-              </figure>
-              <span className="moodboard-mark" aria-hidden="true">RG—01</span>
-            </div>
-          </div>
-        </section>
+        {(content.editorialBoards || []).slice(0, 1).map((board, index) => <EditorialBoardView key={board.id} board={board} index={index} />)}
 
 <section id="work" className="scroll-mt-20 border-t border-black/10 bg-[#e9e7e1] px-5 py-20 md:px-10 md:py-28">
           <div className="mx-auto max-w-[1340px]">
@@ -1504,27 +1623,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* CREATIVE FRAGMENTS — after selected work */}
-        <section className="visual-notes visual-notes-after" aria-label="More creative work and visual details">
-          <div className="visual-notes-inner visual-notes-after-inner">
-            <div className="moodboard moodboard-after">
-              <figure className="moodboard-piece moodboard-piece-wide">
-                <img src="https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5810_s0qev9.jpg" alt="Creative production and campaign detail" loading="lazy"/>
-                <figcaption><span>03 / THE DETAILS</span><span>GOOD WORK LIVES IN THE DETAILS</span></figcaption>
-              </figure>
-              <figure className="moodboard-piece moodboard-piece-tall">
-                <img src="https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/Birdal1_ss9kr2.jpg" alt="Editorial campaign moment" loading="lazy"/>
-                <figcaption><span>04 / THE FINISH</span></figcaption>
-              </figure>
-              <span className="moodboard-sticker" aria-hidden="true">A LITTLE<br/>MORE<br/><i>INSPIRATION</i></span>
-            </div>
-            <div className="visual-notes-heading visual-notes-after-heading">
-              <p className="eyebrow">A visual point of view / 02</p>
-              <h2>Not everything<br/>fits in a <em>case study.</em></h2>
-              <p>Creative details, campaign moments and the visual thinking in between.</p>
-            </div>
-          </div>
-        </section>
+        {(content.editorialBoards || []).slice(1).map((board, index) => <EditorialBoardView key={board.id} board={board} index={index + 1} />)}
 
         {/* ================================================================ */}
         {/* 3. IMPACT                                                        */}
