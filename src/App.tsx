@@ -1376,10 +1376,10 @@ export default function App() {
           <div className="hero-glow-1 pointer-events-none absolute -top-24 right-0 h-[520px] w-[520px] rounded-full bg-gradient-to-br from-[#bd5938]/10 via-[#e48967]/7 to-transparent blur-3xl" />
           <div className="hero-glow-2 pointer-events-none absolute -bottom-32 -left-24 h-[440px] w-[440px] rounded-full bg-gradient-to-tr from-[#f0df75]/8 via-[#c9b9ed]/7 to-transparent blur-3xl" />
           <div className="hero-grain" />
-          <div className="relative mx-auto grid w-full max-w-[1420px] items-center gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(500px,.92fr)] xl:gap-8">
+          <div className="relative mx-auto grid w-full max-w-[1420px] items-center gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(500px,.92fr)] xl:gap-8">
             <div className="relative z-10 max-w-[760px] py-5 lg:py-0">
               <p className="reveal eyebrow mb-5 font-bold text-[#bd5938]">MARKETING · PARTNERSHIPS · GROWTH</p>
-              <h1 className="reveal max-w-none text-[clamp(2rem,3.15vw,3.15rem)] font-extrabold leading-[1.04] tracking-[-0.055em] text-[#171715] lg:whitespace-nowrap">Marketing that moves people and business forward.</h1>
+              <h1 className="reveal max-w-none text-[clamp(2.1rem,2.7vw,2.65rem)] font-extrabold leading-[1.04] tracking-[-0.055em] text-[#171715] xl:whitespace-nowrap">I turn good ideas into measurable growth.</h1>
               <div className="reveal reveal-d1 mt-5 max-w-[470px]">
                 <p className="text-sm leading-relaxed text-black/65 md:text-base">Hi, I'm <strong className="font-bold text-black">{content.name}</strong>. I bring strategy, relationships and execution together to create meaningful growth.</p>
               </div>
