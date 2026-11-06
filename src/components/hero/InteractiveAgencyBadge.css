@@ -1,6 +1,6 @@
 .agency-pass-stage{--pass-ink:#171715;--pass-olive:#8c8e5b;position:relative;width:min(100%,590px);height:660px;perspective:1500px;isolation:isolate;user-select:none}
 .agency-pass-meta{position:absolute;top:10px;left:4px;right:4px;display:flex;justify-content:space-between;color:rgba(23,23,21,.42);font:9px 'DM Mono',monospace;letter-spacing:.14em}
-.agency-pass-rig{position:absolute;top:30px;left:50%;width:340px;height:590px;margin-left:-170px;transform-origin:50% 0;will-change:transform}
+.agency-pass-rig{position:absolute;top:30px;left:50%;width:340px;height:590px;margin-left:-170px;transform-origin:50% 0;transform:rotate(var(--swing-angle,-2deg)) scale(var(--rig-scale,1));will-change:transform}
 .agency-pass-lanyard{position:absolute;top:0;left:50%;width:220px;height:280px;margin-left:-110px;overflow:visible;filter:drop-shadow(0 3px 2px rgba(0,0,0,.09))}
 .agency-pass-card-anchor{position:absolute;top:205px;left:50%;width:300px;height:410px;margin-left:-150px;transform-origin:50% 0}
 .agency-pass-clip{position:absolute;z-index:2;top:-3px;left:50%;width:34px;height:24px;margin-left:-17px;border:2px solid #9b9a91;border-radius:5px 5px 8px 8px;background:linear-gradient(90deg,#77766f,#f6f4ec 45%,#85847d);box-shadow:0 2px 3px #0002}
@@ -34,7 +34,7 @@
 .agency-pass-instruction svg{color:var(--pass-olive)}
 .agency-pass-instruction i{font-style:normal;color:var(--pass-olive)}
 @media(max-width:1100px){.agency-pass-stage{height:620px}.agency-pass-rig{transform:scale(.94);transform-origin:top center}}
-@media(max-width:1023px){.agency-pass-stage{height:620px;max-width:540px}.agency-pass-meta{left:8px;right:8px}.agency-pass-rig{top:24px}}
-@media(max-width:640px){.agency-pass-stage{height:535px;max-width:100%;overflow:visible}.agency-pass-meta{top:0;font-size:7px}.agency-pass-rig{top:18px;transform:scale(.78);transform-origin:top center}.agency-pass-instruction{bottom:5px;font-size:7px}.agency-pass-card-anchor{top:198px}}
-@media(max-width:380px){.agency-pass-stage{height:490px}.agency-pass-rig{transform:scale(.7)}}
+@media(max-width:1023px){.agency-pass-stage{height:620px;max-width:540px}.agency-pass-meta{left:8px;right:8px} .agency-pass-rig{top:24px;--rig-scale:.94}}
+@media(max-width:640px){.agency-pass-stage{height:535px;max-width:100%;overflow:visible}.agency-pass-meta{top:0;font-size:7px}.agency-pass-rig{top:18px;--rig-scale:.78;transform-origin:top center}.agency-pass-instruction{bottom:5px;font-size:7px}.agency-pass-card-anchor{top:198px}}
+@media(max-width:380px){.agency-pass-stage{height:490px}.agency-pass-rig{--rig-scale:.7}}
 @media(prefers-reduced-motion:reduce){.agency-pass-card{transition:none!important}}
