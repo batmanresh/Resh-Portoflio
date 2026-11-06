@@ -561,6 +561,8 @@ function EditorialBoardView({ board, index }: { board: EditorialBoard; index: nu
   const [activeIndex, setActiveIndex] = useState(0);
   const [focusedImage, setFocusedImage] = useState<number | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ pointerId: number; startX: number; scrollLeft: number } | null>(null);
+  const draggedRef = useRef(false);
   const images = board.images || [];
 
   useEffect(() => {
@@ -612,7 +614,27 @@ function EditorialBoardView({ board, index }: { board: EditorialBoard; index: nu
         {board.description?.trim() && <p className="editorial-board-description">{board.description}</p>}
       </div>
       <div className="editorial-board-track-wrap">
-        <div className="editorial-board-track" ref={trackRef} onScroll={syncActiveImage} aria-label="Editorial image gallery">
+        <div
+          className="editorial-board-track"
+          ref={trackRef}
+          onScroll={syncActiveImage}
+          onPointerDown={event => {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            dragRef.current = { pointerId: event.pointerId, startX: event.clientX, scrollLeft: event.currentTarget.scrollLeft };
+            draggedRef.current = false;
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={event => {
+            if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+            const delta = event.clientX - dragRef.current.startX;
+            if (Math.abs(delta) > 6) draggedRef.current = true;
+            if (draggedRef.current) event.currentTarget.scrollLeft = dragRef.current.scrollLeft - delta;
+          }}
+          onPointerUp={event => { if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null; }}
+          onPointerCancel={() => { dragRef.current = null; }}
+          onClickCapture={event => { if (draggedRef.current) { event.preventDefault(); event.stopPropagation(); draggedRef.current = false; } }}
+          aria-label="Editorial image gallery"
+        >
           {images.map((image, imageIndex) => (
             <button type="button" key={image.id || image.url} className={`editorial-board-card editorial-board-card-${imageIndex % 4}`} onClick={() => setFocusedImage(imageIndex)} aria-label={`View image ${imageIndex + 1}: ${image.alt || board.title}`}>
               <img src={image.url} alt={image.alt || board.title} loading={imageIndex > 1 ? 'lazy' : 'eager'}/>
