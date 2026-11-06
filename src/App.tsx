@@ -1016,14 +1016,14 @@ function AdminPortal({
       className="fixed inset-0 z-[100] flex justify-end bg-black/50 backdrop-blur-sm"
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <aside className="flex h-full w-full max-w-3xl flex-col bg-[#f6f5f1] shadow-2xl" role="dialog" aria-modal="true">
+      <aside className="flex h-full w-full admin-shell max-w-6xl flex-col bg-[#f6f5f1] shadow-2xl" role="dialog" aria-modal="true" aria-label="Portfolio content studio">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-black/10 bg-white px-6 py-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-xs font-bold text-white">⚙</span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#171715] text-xs font-bold tracking-tight text-white">RG</span>
             <div>
-              <h2 className="text-base font-extrabold text-black">Portfolio Admin</h2>
-              <p className="text-xs text-black/50">Full CRUD — Work, Experience, Hero Copy</p>
+              <h2 className="text-base font-extrabold text-black">Content Studio</h2>
+              <p className="text-xs text-black/50">RESHAM GURUNG · PORTFOLIO MANAGEMENT</p>
             </div>
           </div>
           <button type="button" onClick={() => { void supabase?.auth.signOut(); }} className="mr-2 rounded-full border border-black/15 px-3 py-2 text-xs font-semibold text-black/60 hover:bg-black/5">Sign out</button>
@@ -1041,8 +1041,18 @@ function AdminPortal({
           <div className="bg-emerald-600 px-6 py-2 text-center text-xs font-bold text-white">{statusMsg}</div>
         )}
 
+        {/* Content overview */}
+        <div className="admin-overview grid grid-cols-2 gap-px border-b border-black/10 bg-black/10 sm:grid-cols-4">
+          {[
+            { label: 'Selected work', value: content.projects.length, note: 'Project stories' },
+            { label: 'Editorial boards', value: (content.editorialBoards || []).length, note: 'Visual collections' },
+            { label: 'Experience', value: content.experience.length, note: 'Career entries' },
+            { label: 'Page sections', value: 5, note: 'Copy & contact' }
+          ].map(item => <div key={item.label} className="bg-[#f6f5f1] px-5 py-4"><p className="text-[9px] font-bold uppercase tracking-[.16em] text-black/40">{item.label}</p><div className="mt-1 flex items-baseline gap-2"><strong className="text-2xl font-semibold tracking-tight text-black">{String(item.value).padStart(2, '0')}</strong><span className="text-[10px] text-black/40">{item.note}</span></div></div>)}
+        </div>
+
         {/* Tabs */}
-        <div className="admin-tabs flex border-b border-black/10 bg-[#eae8e1] px-6 text-xs font-bold">
+        <div className="admin-tabs flex border-b border-black/10 bg-white px-6 text-xs font-bold">
           {([
             { key: 'projects', icon: <Layers className="h-3.5 w-3.5" />, label: `Work (${content.projects.length})` },
             { key: 'boards', icon: <Film className="h-3.5 w-3.5" />, label: `Boards (${(content.editorialBoards || []).length})` },
@@ -1055,7 +1065,7 @@ function AdminPortal({
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-1.5 border-b-2 px-4 py-3 transition-colors ${
-                activeTab === tab.key ? 'border-black bg-white text-black' : 'border-transparent text-black/60 hover:text-black'
+                activeTab === tab.key ? 'border-[#bd5938] bg-white text-[#171715]' : 'border-transparent text-black/50 hover:border-black/20 hover:text-black'
               }`}
             >
               {tab.icon}<span>{tab.label}</span>
@@ -1064,7 +1074,7 @@ function AdminPortal({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+        <div className="admin-content flex-1 overflow-y-auto p-6 md:p-9">
 
           {/* PROJECTS */}
           {activeTab === 'projects' && (
