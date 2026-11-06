@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import {
   ArrowUpRight,
   Copy,
@@ -59,6 +59,14 @@ export type Principle = {
   copy: string;
 };
 
+export type EditorialBoard = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  description?: string;
+  images: { id: string; url: string; alt: string; caption?: string }[];
+};
+
 export type PortfolioContent = {
   name: string;
   roleLine: string;
@@ -82,6 +90,7 @@ export type PortfolioContent = {
   experience: Experience[];
   projects: Project[];
   principles: Principle[];
+  editorialBoards: EditorialBoard[];
   contactHeading?: string;
   contactAccent?: string;
   contactDescription?: string;
@@ -252,6 +261,28 @@ const DEFAULT_CONTENT: PortfolioContent = {
       mediaType: 'image',
       image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1400&q=85',
       outcome: 'Brokered multi-brand partnerships driving recurring referral traffic and brand equity.'
+    }
+  ],
+  editorialBoards: [
+    {
+      id: 'board-before',
+      eyebrow: 'A visual point of view',
+      title: 'Ideas take shape.',
+      description: '',
+      images: [
+        { id: 'board-before-1', url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/All_g0udqd.jpg', alt: 'Creative campaign collage and visual direction', caption: 'Visual direction' },
+        { id: 'board-before-2', url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5802_tfxp7t.jpg', alt: 'Behind-the-scenes creative work', caption: 'In the moment' }
+      ]
+    },
+    {
+      id: 'board-after',
+      eyebrow: 'Outside the case study',
+      title: 'The details matter.',
+      description: '',
+      images: [
+        { id: 'board-after-1', url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5810_s0qev9.jpg', alt: 'Creative production and campaign detail', caption: 'The details' },
+        { id: 'board-after-2', url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/Birdal1_ss9kr2.jpg', alt: 'Editorial campaign moment', caption: 'The finish' }
+      ]
     }
   ],
   principles: [
@@ -452,15 +483,16 @@ function ExperienceRow({ item, index }: { item: Experience; index: number }) {
 // LIGHTBOX
 // ============================================================================
 function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
-  const mediaItems: NonNullable<Project['media']> = item.media?.length ? item.media : [{ url: item.image, type: (item.mediaType || 'image') as 'image' | 'video', thumbnailUrl: undefined }];
+  const mediaItems: NonNullable<Project['media']> = item.media?.length ? item.media : [{ url: item.image, type: (item.mediaType || 'image') as 'image' | 'video' }];
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [focusPhoto, setFocusPhoto] = useState(false);
   const activeMedia = mediaItems[activeMediaIndex] || mediaItems[0];
+
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowRight') setActiveMediaIndex(index => (index + 1) % mediaItems.length);
-      if (e.key === 'ArrowLeft') setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length);
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowRight') setActiveMediaIndex(index => (index + 1) % mediaItems.length);
+      if (event.key === 'ArrowLeft') setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length);
     };
     window.addEventListener('keydown', handler);
     document.body.style.overflow = 'hidden';
@@ -471,69 +503,176 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
   }, [onClose, mediaItems.length]);
 
   return (
-    <div
-      className="lightbox-backdrop fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-2 md:p-3"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      role="dialog"
-      aria-modal="true"
-      aria-label={item.title}
-    >
-      <div className="lightbox-panel relative flex h-[calc(100svh-16px)] max-h-[96svh] w-[calc(100vw-16px)] max-w-[1600px] flex-col rounded-2xl overflow-hidden bg-[#171715] shadow-2xl md:h-[94svh] md:w-[96vw]">
-        <button type="button" onClick={() => setFocusPhoto(value => !value)} className="absolute left-4 top-4 z-10 rounded-full border border-white/15 bg-black/65 px-3.5 py-2 text-[11px] font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/20" aria-pressed={focusPhoto}>
-          {focusPhoto ? 'Show project details' : 'Expand photo'}
-        </button>
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/25"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
-        {/* Media */}
-        <div className={`lightbox-content flex min-h-0 flex-1 flex-col bg-[#10100f] ${focusPhoto ? 'p-0' : 'p-2 md:p-3'}`}>
-          <div className="project-viewer-media relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black">
-            {activeMedia?.type === 'video' ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay className="h-full max-h-full w-full object-contain" /> : <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="h-full max-h-full w-full object-contain" />}
-            {mediaItems.length > 1 && <><button type="button" onClick={() => setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length)} aria-label="Previous media" className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/85"><ChevronLeft className="h-5 w-5" /></button><button type="button" onClick={() => setActiveMediaIndex(index => (index + 1) % mediaItems.length)} aria-label="Next media" className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/85"><ChevronRight className="h-5 w-5" /></button></>}
-            {mediaItems.length > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1.5 font-mono text-[10px] text-white">{String(activeMediaIndex + 1).padStart(2, '0')} / {String(mediaItems.length).padStart(2, '0')}</span>}
+    <div className="editorial-backdrop fixed inset-0 z-[200] overflow-y-auto bg-[#e9e6df]" onClick={event => { if (event.target === event.currentTarget) onClose(); }} role="dialog" aria-modal="true" aria-label={item.title}>
+      <button type="button" onClick={onClose} className="editorial-close" aria-label="Close project"><X className="h-5 w-5"/></button>
+      <article className="editorial-sheet">
+        <header className="editorial-masthead"><span>RESHAM GURUNG / SELECTED WORK</span><span>PROJECT FILE — {item.category.toUpperCase()}</span><span>SCROLL TO EXPLORE ↓</span></header>
+        <section className="editorial-opening">
+          <div className="editorial-opening-copy">
+            <p className="eyebrow">{item.category} / PROJECT FEATURE</p>
+            <h1>{item.title}</h1>
+            <p className="editorial-deck">{item.summary}</p>
+            <div className="editorial-role"><span>MY ROLE</span><strong>{item.role || 'Strategy · Creative direction · Execution'}</strong></div>
+            <div className="editorial-opening-index"><span>01</span><span>THE STORY BEHIND THE WORK</span></div>
           </div>
-          {!focusPhoto && mediaItems.length > 1 && <div className="mt-2 flex gap-2 overflow-x-auto px-1 pb-1">{mediaItems.map((media, index) => <button key={`${media.url}-${index}`} onClick={() => setActiveMediaIndex(index)} aria-label={`Show photo ${index + 1} of ${mediaItems.length}`} aria-pressed={activeMediaIndex === index} className={`relative h-12 w-[72px] shrink-0 overflow-hidden rounded-lg border-2 transition-opacity md:h-14 md:w-20 ${activeMediaIndex === index ? 'border-[#e48967]' : 'border-white/10 opacity-60 hover:opacity-100'}`}>{media.thumbnailUrl ? <img src={media.thumbnailUrl} alt="" className="h-full w-full object-cover" /> : media.type === 'video' ? <span className="flex h-full items-center justify-center bg-[#292927] text-white"><Film className="h-4 w-4" /></span> : <img src={media.url} alt="" className="h-full w-full object-cover" />}</button>)}</div>}
-        </div>
+          <div className="editorial-cover">
+            {activeMedia?.type === 'video'
+              ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay className="editorial-cover-media"/>
+              : <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="editorial-cover-media"/>}
+            <button type="button" className="editorial-expand" onClick={() => setFocusPhoto(value => !value)}>{focusPhoto ? 'Return to story' : 'View image larger'} ↗</button>
+          </div>
+        </section>
 
-        {/* Info bar */}
-        {!focusPhoto && <div className="lightbox-info shrink-0 border-t border-white/10 px-4 py-3 text-white md:px-6 md:py-4">
-          <button onClick={onClose} className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs font-bold text-white md:hidden" aria-label="Back to work"><ChevronLeft className="h-4 w-4" /> Back to work</button>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="eyebrow text-[#e48967] font-bold mb-1">{item.category}</p>
-              <h2 className="text-lg font-extrabold tracking-tight">{item.title}</h2>
-              <p className="mt-1 text-sm text-white/60">{item.summary}</p>
+        {!focusPhoto && <>
+          <section className="editorial-context">
+            <div><p className="eyebrow">THE THINKING</p><h2>Good creative work<br/><em>starts with a point of view.</em></h2></div>
+            <p>{item.summary} The goal was to bring the idea to life through considered creative direction, clear communication and details that make the experience memorable.</p>
+          </section>
+
+          <section className="editorial-gallery">
+            <div className="editorial-gallery-heading"><p className="eyebrow">02 / VISUAL ARCHIVE</p><span>{String(activeMediaIndex + 1).padStart(2,'0')} — {String(mediaItems.length).padStart(2,'0')}</span></div>
+            <div className="editorial-gallery-stage">
+              {mediaItems.map((media, index) => (
+                <button type="button" key={media.url + index} className={`editorial-gallery-item ${activeMediaIndex === index ? 'is-active' : ''} ${index % 3 === 0 ? 'gallery-item-large' : ''}`} onClick={() => setActiveMediaIndex(index)} aria-label={`View media ${index + 1}`}>
+                  {media.type === 'video' ? <span className="editorial-video-tile"><Film className="h-8 w-8"/><small>VIDEO</small></span> : <img src={media.thumbnailUrl || media.url} alt={`${item.title} — visual ${index + 1}`} loading="lazy"/>}
+                  <span className="editorial-gallery-number">{String(index + 1).padStart(2,'0')}</span>
+                </button>
+              ))}
             </div>
-            {item.outcome && (
-              <div className="shrink-0 rounded-xl border border-white/15 bg-white/8 px-4 py-3 max-w-xs">
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1">Outcome</p>
-                <p className="text-xs font-semibold text-white/80">{item.outcome}</p>
-              </div>
-            )}
-          </div>
-          {item.link?.trim() && (
-            <a
-              href={item.link}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#e48967] underline underline-offset-4 hover:text-white"
-            >
-              View project ↗
-            </a>
-          )}
-        </div>}
-      </div>
+            {mediaItems.length > 1 && <div className="editorial-gallery-controls"><button type="button" onClick={() => setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length)}><ChevronLeft size={16}/> PREVIOUS</button><button type="button" onClick={() => setActiveMediaIndex(index => (index + 1) % mediaItems.length)}>NEXT <ChevronRight size={16}/></button></div>}
+          </section>
+
+          <section className="editorial-outcome">
+            <p className="eyebrow">03 / WHAT MOVED FORWARD</p>
+            <h2>{item.outcome || 'A considered idea, brought to life.'}</h2>
+            <div className="editorial-outcome-bottom"><span>STRATEGY → PEOPLE → EXECUTION</span>{item.link?.trim() && <a href={item.link} target="_blank" rel="noreferrer">VIEW PROJECT ↗</a>}</div>
+          </section>
+          <footer className="editorial-footer"><span>END OF PROJECT FILE</span><button type="button" onClick={onClose}>BACK TO ALL WORK ↑</button><span>RESHAM GURUNG © {new Date().getFullYear()}</span></footer>
+        </>}
+      </article>
     </div>
   );
 }
 
 // ============================================================================
+// EDITORIAL BOARDS — INTERACTIVE IMAGE EXPLORER
+// ============================================================================
+function EditorialBoardView({ board, index }: { board: EditorialBoard; index: number }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [focusedImage, setFocusedImage] = useState<number | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ pointerId: number; startX: number; scrollLeft: number } | null>(null);
+  const draggedRef = useRef(false);
+  const images = board.images || [];
+
+  useEffect(() => {
+    setActiveIndex(current => Math.min(current, Math.max(0, images.length - 1)));
+  }, [images.length]);
+
+  useEffect(() => {
+    if (focusedImage === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFocusedImage(null);
+      if (event.key === 'ArrowRight') setFocusedImage(current => current === null ? null : (current + 1) % images.length);
+      if (event.key === 'ArrowLeft') setFocusedImage(current => current === null ? null : (current - 1 + images.length) % images.length);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [focusedImage, images.length]);
+
+  if (!images.length) return null;
+
+  const goToImage = (imageIndex: number) => {
+    const next = (imageIndex + images.length) % images.length;
+    setActiveIndex(next);
+    const card = trackRef.current?.children[next] as HTMLElement | undefined;
+    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  };
+
+  const syncActiveImage = () => {
+    const track = trackRef.current;
+    if (!track) return;
+    const center = track.getBoundingClientRect().left + track.clientWidth / 2;
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    Array.from(track.children).forEach((child, childIndex) => {
+      const rect = (child as HTMLElement).getBoundingClientRect();
+      const distance = Math.abs(rect.left + rect.width / 2 - center);
+      if (distance < closestDistance) { closestDistance = distance; closestIndex = childIndex; }
+    });
+    setActiveIndex(closestIndex);
+  };
+
+  return (
+    <section className={`editorial-board editorial-board-${index % 2 ? 'reverse' : 'normal'}`} aria-label={board.title || 'Editorial board'}>
+      <div className="editorial-board-topline">
+        <span>{board.eyebrow || 'VISUAL STORY'}</span>
+        <span>{String(index + 1).padStart(2, '0')} / EDITORIAL</span>
+      </div>
+      <div className="editorial-board-heading">
+        <h2>{board.title}</h2>
+        {board.description?.trim() && <p className="editorial-board-description">{board.description}</p>}
+      </div>
+      <div className="editorial-board-track-wrap">
+        <div
+          className="editorial-board-track"
+          ref={trackRef}
+          onScroll={syncActiveImage}
+          onPointerDown={event => {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            dragRef.current = { pointerId: event.pointerId, startX: event.clientX, scrollLeft: event.currentTarget.scrollLeft };
+            draggedRef.current = false;
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={event => {
+            if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+            const delta = event.clientX - dragRef.current.startX;
+            if (Math.abs(delta) > 6) draggedRef.current = true;
+            if (draggedRef.current) event.currentTarget.scrollLeft = dragRef.current.scrollLeft - delta;
+          }}
+          onPointerUp={event => { if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null; }}
+          onPointerCancel={() => { dragRef.current = null; }}
+          onClickCapture={event => { if (draggedRef.current) { event.preventDefault(); event.stopPropagation(); draggedRef.current = false; } }}
+          aria-label="Editorial image gallery"
+        >
+          {images.map((image, imageIndex) => (
+            <button type="button" key={image.id || image.url} className={`editorial-board-card editorial-board-card-${imageIndex % 4}`} onClick={() => setFocusedImage(imageIndex)} aria-label={`View image ${imageIndex + 1}: ${image.alt || board.title}`}>
+              <img src={image.url} alt={image.alt || board.title} loading={imageIndex > 1 ? 'lazy' : 'eager'}/>
+              <span className="editorial-board-card-shade"/>
+              <span className="editorial-board-card-meta">
+                <span>{image.caption || board.title}</span>
+                <span>{String(imageIndex + 1).padStart(2, '0')}</span>
+              </span>
+              <span className="editorial-board-card-open">↗</span>
+            </button>
+          ))}
+        </div>
+        <div className="editorial-board-footer">
+          <div className="editorial-board-progress" aria-hidden="true"><span style={{ width: `${((activeIndex + 1) / images.length) * 100}%` }}/></div>
+          <div className="editorial-board-footer-controls">
+            <span className="editorial-board-count">{String(activeIndex + 1).padStart(2, '0')} <i>/</i> {String(images.length).padStart(2, '0')}</span>
+            <span className="editorial-board-hint">DRAG OR SCROLL TO EXPLORE</span>
+            <div className="editorial-board-controls">
+              <button type="button" onClick={() => goToImage(activeIndex - 1)} aria-label="Previous image"><ChevronLeft size={18}/></button>
+              <button type="button" onClick={() => goToImage(activeIndex + 1)} aria-label="Next image"><ChevronRight size={18}/></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {focusedImage !== null && images[focusedImage] && (
+        <div className="editorial-image-viewer" role="dialog" aria-modal="true" aria-label="Expanded editorial image" onClick={event => { if (event.target === event.currentTarget) setFocusedImage(null); }}>
+          <div className="editorial-viewer-top"><span>{board.title}</span><span>{String(focusedImage + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}</span></div>
+          <button type="button" className="editorial-image-close" onClick={() => setFocusedImage(null)} aria-label="Close image"><X/></button>
+          <button type="button" className="editorial-image-nav editorial-image-prev" onClick={() => setFocusedImage(current => current === null ? null : (current - 1 + images.length) % images.length)} aria-label="Previous image"><ChevronLeft/></button>
+          <img src={images[focusedImage].url} alt={images[focusedImage].alt || board.title}/>
+          <button type="button" className="editorial-image-nav editorial-image-next" onClick={() => setFocusedImage(current => current === null ? null : (current + 1) % images.length)} aria-label="Next image"><ChevronRight/></button>
+          {images[focusedImage].caption && <p className="editorial-viewer-caption">{images[focusedImage].caption}</p>}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ADMIN PORTAL
 // ============================================================================
 function AdminPortal({
@@ -552,7 +691,7 @@ function AdminPortal({
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'projects' | 'experience' | 'profile' | 'pages' | 'json'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'boards' | 'experience' | 'profile' | 'pages' | 'json'>('projects');
   const [statusMsg, setStatusMsg] = useState('');
 
   useEffect(() => {
@@ -606,6 +745,7 @@ function AdminPortal({
   });
 
   const [jsonText, setJsonText] = useState(JSON.stringify(content, null, 2));
+  const [boardsDraft, setBoardsDraft] = useState<EditorialBoard[]>(content.editorialBoards || []);
 
   useEffect(() => {
     setProfileForm({
@@ -617,6 +757,7 @@ function AdminPortal({
       cvUrl: content.cvUrl
     });
     setJsonText(JSON.stringify(content, null, 2));
+    setBoardsDraft(content.editorialBoards || []);
     setPageForm({ projectsHeading: content.projectsHeading, projectsEyebrow: content.projectsEyebrow,
       impactHeading: content.impactHeading, impactEyebrow: content.impactEyebrow,
       experienceHeading: content.experienceHeading, experienceEyebrow: content.experienceEyebrow,
@@ -624,6 +765,21 @@ function AdminPortal({
       contactHeading: content.contactHeading || '', contactAccent: content.contactAccent || '', contactDescription: content.contactDescription || '',
       contactOptions: (content.contactOptions || []).join('\n'), metrics: content.metrics, principles: content.principles });
   }, [content]);
+
+  const saveBoards = (event: FormEvent) => {
+    event.preventDefault();
+    const cleaned = boardsDraft.map(board => ({
+      ...board,
+      eyebrow: (board.eyebrow || '').trim(),
+      title: (board.title || '').trim(),
+      description: (board.description || '').trim(),
+      images: (board.images || []).filter(image => image.url.trim()).map(image => ({ ...image, url: image.url.trim(), alt: (image.alt || '').trim(), caption: (image.caption || '').trim() }))
+    }));
+    if (cleaned.some(board => !board.title)) { notify('Give each board a short title.'); return; }
+    if (cleaned.some(board => board.images.some(image => !/^https?:\/\//i.test(image.url)))) { notify('Each image needs a valid http or https URL.'); return; }
+    onUpdateContent({ ...content, editorialBoards: cleaned });
+    notify('Editorial boards saved.');
+  };
 
   const notify = (msg: string) => {
     setStatusMsg(msg);
@@ -808,6 +964,12 @@ function AdminPortal({
             <h2 className="text-xl font-extrabold text-black">Admin Login</h2>
             <p className="mt-1 text-xs text-black/50">Portfolio Content Manager</p>
           </div>
+          {!isSupabaseConfigured && (
+            <div role="alert" className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">
+              <strong className="mb-1 block">Admin sign-in is not configured for this deployment.</strong>
+              Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to the Vercel environment for this branch, then redeploy. A Supabase Auth admin account is also required.
+            </div>
+          )}
           <form onSubmit={handleLogin} className="space-y-3">
             <div>
               <label className="text-[11px] font-bold text-black/60 block mb-1">Username</label>
@@ -883,6 +1045,7 @@ function AdminPortal({
         <div className="admin-tabs flex border-b border-black/10 bg-[#eae8e1] px-6 text-xs font-bold">
           {([
             { key: 'projects', icon: <Layers className="h-3.5 w-3.5" />, label: `Work (${content.projects.length})` },
+            { key: 'boards', icon: <Film className="h-3.5 w-3.5" />, label: `Boards (${(content.editorialBoards || []).length})` },
             { key: 'experience', icon: <Briefcase className="h-3.5 w-3.5" />, label: `Exp (${content.experience.length})` },
             { key: 'profile', icon: <Sliders className="h-3.5 w-3.5" />, label: 'Hero & Profile' },
             { key: 'pages', icon: <FileText className="h-3.5 w-3.5" />, label: 'Page Content' },
@@ -1014,6 +1177,41 @@ function AdminPortal({
                 ))}
               </div>
             </div>
+          )}
+
+          {/* EDITORIAL BOARDS */}
+          {activeTab === 'boards' && (
+            <form onSubmit={saveBoards} className="space-y-6">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div><h3 className="text-lg font-bold text-black">Editorial boards</h3><p className="text-xs text-black/55">Manage the image stories shown around Selected Work.</p></div>
+                <button type="button" onClick={() => setBoardsDraft([...boardsDraft, { id: `board-${Date.now()}`, eyebrow: '', title: 'New board', description: '', images: [] }])} className="rounded-full bg-black px-4 py-2 text-xs font-bold text-white"><Plus className="mr-1 inline h-3.5 w-3.5"/>Add board</button>
+              </div>
+              {boardsDraft.map((board, boardIndex) => (
+                <section key={board.id} className="space-y-4 rounded-2xl border border-black/10 bg-white p-4 md:p-5">
+                  <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-bold uppercase tracking-widest text-[#bd5938]">Board {String(boardIndex + 1).padStart(2, '0')}</span><div className="flex items-center gap-2"><button type="button" disabled={boardIndex === 0} onClick={() => setBoardsDraft(current => { const next = [...current]; [next[boardIndex - 1], next[boardIndex]] = [next[boardIndex], next[boardIndex - 1]]; return next; })} className="rounded-lg border border-black/10 px-2 py-1 text-[10px] font-bold disabled:opacity-30">Move up</button><button type="button" disabled={boardIndex === boardsDraft.length - 1} onClick={() => setBoardsDraft(current => { const next = [...current]; [next[boardIndex + 1], next[boardIndex]] = [next[boardIndex], next[boardIndex + 1]]; return next; })} className="rounded-lg border border-black/10 px-2 py-1 text-[10px] font-bold disabled:opacity-30">Move down</button><button type="button" onClick={() => setBoardsDraft(boardsDraft.filter((_, i) => i !== boardIndex))} className="rounded-lg border border-red-200 p-2 text-red-600" aria-label="Delete board"><Trash2 size={15}/></button></div></div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-[11px] font-bold">Small label<input value={board.eyebrow} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, eyebrow: e.target.value } : item))} placeholder="Optional" className={`${inputCls} mt-1`}/></label>
+                    <label className="text-[11px] font-bold">Board title *<input required value={board.title} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, title: e.target.value } : item))} className={`${inputCls} mt-1`}/></label>
+                  </div>
+                  <label className="block text-[11px] font-bold">Short description <span className="font-normal text-black/40">(optional)</span><textarea rows={2} value={board.description || ''} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, description: e.target.value } : item))} className={`${inputCls} mt-1`}/></label>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between"><h4 className="text-xs font-bold">Images ({board.images.length})</h4><button type="button" onClick={() => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: [...item.images, { id: `img-${Date.now()}`, url: '', alt: '', caption: '' }] } : item))} className="rounded-full border border-black/15 px-3 py-1.5 text-[10px] font-bold">+ Add image</button></div>
+                    {board.images.map((image, imageIndex) => (
+                      <div key={image.id || imageIndex} className="grid gap-3 rounded-xl bg-[#f6f5f1] p-3 sm:grid-cols-[88px_1fr]">
+                        <div className="h-20 overflow-hidden rounded-lg bg-black/10">{image.url && <img src={image.url} alt="" className="h-full w-full object-cover"/>}</div>
+                        <div className="min-w-0 space-y-2">
+                          <input type="url" value={image.url} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.map((asset, j) => j === imageIndex ? { ...asset, url: e.target.value } : asset) } : item))} placeholder="Image URL (https://...)" aria-label="Image URL" className={inputCls}/>
+                          <div className="grid gap-2 sm:grid-cols-2"><input value={image.alt} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.map((asset, j) => j === imageIndex ? { ...asset, alt: e.target.value } : asset) } : item))} placeholder="Image description (alt text)" aria-label="Image description" className={inputCls}/><input value={image.caption || ''} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.map((asset, j) => j === imageIndex ? { ...asset, caption: e.target.value } : asset) } : item))} placeholder="Caption (optional)" aria-label="Image caption" className={inputCls}/></div>
+                          <div className="flex justify-end gap-2"><button type="button" disabled={imageIndex === 0} onClick={() => setBoardsDraft(boardsDraft.map((item, i) => { if (i !== boardIndex) return item; const images = [...item.images]; [images[imageIndex - 1], images[imageIndex]] = [images[imageIndex], images[imageIndex - 1]]; return { ...item, images }; }))} className="rounded-lg border border-black/10 px-2 py-1 text-[10px] font-bold disabled:opacity-30">Move up</button><button type="button" disabled={imageIndex === board.images.length - 1} onClick={() => setBoardsDraft(boardsDraft.map((item, i) => { if (i !== boardIndex) return item; const images = [...item.images]; [images[imageIndex + 1], images[imageIndex]] = [images[imageIndex], images[imageIndex + 1]]; return { ...item, images }; }))} className="rounded-lg border border-black/10 px-2 py-1 text-[10px] font-bold disabled:opacity-30">Move down</button><button type="button" onClick={() => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.filter((_, j) => j !== imageIndex) } : item))} className="rounded-lg border border-red-200 px-2 py-1 text-[10px] font-bold text-red-600">Remove</button></div>
+                        </div>
+                      </div>
+                    ))}
+                    {!board.images.length && <p className="rounded-xl border border-dashed border-black/15 p-5 text-center text-xs text-black/45">No images yet. Add an image to make this board visible.</p>}
+                  </div>
+                </section>
+              ))}
+              <button type="submit" className="flex items-center gap-2 rounded-xl bg-black px-6 py-3 text-xs font-bold text-white"><Save size={15}/>Save editorial boards</button>
+            </form>
           )}
 
           {/* EXPERIENCE */}
@@ -1392,7 +1590,9 @@ export default function App() {
         {/* ================================================================ */}
         {/* 2. SELECTED WORK                                                 */}
         {/* ================================================================ */}
-        <section id="work" className="scroll-mt-20 border-t border-black/10 bg-[#e9e7e1] px-5 py-20 md:px-10 md:py-28">
+        {(content.editorialBoards || []).slice(0, 1).map((board, index) => <EditorialBoardView key={board.id} board={board} index={index} />)}
+
+<section id="work" className="scroll-mt-20 border-t border-black/10 bg-[#e9e7e1] px-5 py-20 md:px-10 md:py-28">
           <div className="mx-auto max-w-[1340px]">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
               <div>
@@ -1483,6 +1683,8 @@ export default function App() {
             </p>
           </div>
         </section>
+
+        {(content.editorialBoards || []).slice(1).map((board, index) => <EditorialBoardView key={board.id} board={board} index={index + 1} />)}
 
         {/* ================================================================ */}
         {/* 3. IMPACT                                                        */}
