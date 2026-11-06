@@ -721,7 +721,7 @@ function AdminPortal({
       images: (board.images || []).filter(image => image.url.trim()).map(image => ({ ...image, url: image.url.trim(), alt: image.alt.trim(), caption: (image.caption || '').trim() }))
     }));
     if (cleaned.some(board => !board.title)) { notify('Give each board a short title.'); return; }
-    if (cleaned.some(board => board.images.some(image => !/^https?:\\/\\//i.test(image.url)))) { notify('Each image needs a valid http or https URL.'); return; }
+    if (cleaned.some(board => board.images.some(image => !/^https?:\/\//i.test(image.url)))) { notify('Each image needs a valid http or https URL.'); return; }
     onUpdateContent({ ...content, editorialBoards: cleaned });
     notify('Editorial boards saved.');
   };
