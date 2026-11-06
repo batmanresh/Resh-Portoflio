@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import {
   ArrowUpRight,
   Copy,
@@ -560,8 +560,8 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
 function EditorialBoardView({ board, index }: { board: EditorialBoard; index: number }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [focusedImage, setFocusedImage] = useState<number | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const images = board.images || [];
-  const activeImage = images[activeIndex];
 
   useEffect(() => {
     setActiveIndex(current => Math.min(current, Math.max(0, images.length - 1)));
@@ -579,43 +579,72 @@ function EditorialBoardView({ board, index }: { board: EditorialBoard; index: nu
   }, [focusedImage, images.length]);
 
   if (!images.length) return null;
-  const move = (direction: number) => setActiveIndex(current => (current + direction + images.length) % images.length);
+
+  const goToImage = (imageIndex: number) => {
+    const next = (imageIndex + images.length) % images.length;
+    setActiveIndex(next);
+    const card = trackRef.current?.children[next] as HTMLElement | undefined;
+    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  };
+
+  const syncActiveImage = () => {
+    const track = trackRef.current;
+    if (!track) return;
+    const center = track.getBoundingClientRect().left + track.clientWidth / 2;
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    Array.from(track.children).forEach((child, childIndex) => {
+      const rect = (child as HTMLElement).getBoundingClientRect();
+      const distance = Math.abs(rect.left + rect.width / 2 - center);
+      if (distance < closestDistance) { closestDistance = distance; closestIndex = childIndex; }
+    });
+    setActiveIndex(closestIndex);
+  };
 
   return (
     <section className={`editorial-board editorial-board-${index % 2 ? 'reverse' : 'normal'}`} aria-label={board.title || 'Editorial board'}>
-      <div className="editorial-board-inner">
-        <div className="editorial-board-heading">
-          {board.eyebrow && <p className="eyebrow">{board.eyebrow}</p>}
-          <h2>{board.title}</h2>
-          {board.description?.trim() && <p className="editorial-board-description">{board.description}</p>}
-          <div className="editorial-board-controls">
-            <span className="editorial-board-count">{String(activeIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}</span>
-            <button type="button" onClick={() => move(-1)} aria-label="Previous image"><ChevronLeft size={17}/></button>
-            <button type="button" onClick={() => move(1)} aria-label="Next image"><ChevronRight size={17}/></button>
-          </div>
-        </div>
-        <div className="editorial-board-gallery">
-          <button type="button" className="editorial-board-feature" onClick={() => setFocusedImage(activeIndex)} aria-label={`Open ${activeImage.alt || 'image'}`}>
-            <img key={activeImage.id || activeImage.url} src={activeImage.url} alt={activeImage.alt || board.title} />
-            <span className="editorial-board-open">Expand image ↗</span>
-            {activeImage.caption && <span className="editorial-board-caption">{activeImage.caption}</span>}
-          </button>
-          {images.length > 1 && <div className="editorial-board-thumbs" role="tablist" aria-label="Choose an image">
-            {images.map((image, imageIndex) => (
-              <button type="button" key={image.id || image.url} role="tab" aria-selected={activeIndex === imageIndex} className={activeIndex === imageIndex ? 'is-active' : ''} onClick={() => setActiveIndex(imageIndex)} aria-label={`Show image ${imageIndex + 1}`}>
-                <img src={image.url} alt="" loading="lazy"/>
+      <div className="editorial-board-topline">
+        <span>{board.eyebrow || 'VISUAL STORY'}</span>
+        <span>{String(index + 1).padStart(2, '0')} / EDITORIAL</span>
+      </div>
+      <div className="editorial-board-heading">
+        <h2>{board.title}</h2>
+        {board.description?.trim() && <p className="editorial-board-description">{board.description}</p>}
+      </div>
+      <div className="editorial-board-track-wrap">
+        <div className="editorial-board-track" ref={trackRef} onScroll={syncActiveImage} aria-label="Editorial image gallery">
+          {images.map((image, imageIndex) => (
+            <button type="button" key={image.id || image.url} className={`editorial-board-card editorial-board-card-${imageIndex % 4}`} onClick={() => setFocusedImage(imageIndex)} aria-label={`View image ${imageIndex + 1}: ${image.alt || board.title}`}>
+              <img src={image.url} alt={image.alt || board.title} loading={imageIndex > 1 ? 'lazy' : 'eager'}/>
+              <span className="editorial-board-card-shade"/>
+              <span className="editorial-board-card-meta">
+                <span>{image.caption || board.title}</span>
                 <span>{String(imageIndex + 1).padStart(2, '0')}</span>
-              </button>
-            ))}
-          </div>}
+              </span>
+              <span className="editorial-board-card-open">↗</span>
+            </button>
+          ))}
+        </div>
+        <div className="editorial-board-footer">
+          <div className="editorial-board-progress" aria-hidden="true"><span style={{ width: `${((activeIndex + 1) / images.length) * 100}%` }}/></div>
+          <div className="editorial-board-footer-controls">
+            <span className="editorial-board-count">{String(activeIndex + 1).padStart(2, '0')} <i>/</i> {String(images.length).padStart(2, '0')}</span>
+            <span className="editorial-board-hint">DRAG OR SCROLL TO EXPLORE</span>
+            <div className="editorial-board-controls">
+              <button type="button" onClick={() => goToImage(activeIndex - 1)} aria-label="Previous image"><ChevronLeft size={18}/></button>
+              <button type="button" onClick={() => goToImage(activeIndex + 1)} aria-label="Next image"><ChevronRight size={18}/></button>
+            </div>
+          </div>
         </div>
       </div>
       {focusedImage !== null && images[focusedImage] && (
         <div className="editorial-image-viewer" role="dialog" aria-modal="true" aria-label="Expanded editorial image" onClick={event => { if (event.target === event.currentTarget) setFocusedImage(null); }}>
+          <div className="editorial-viewer-top"><span>{board.title}</span><span>{String(focusedImage + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}</span></div>
           <button type="button" className="editorial-image-close" onClick={() => setFocusedImage(null)} aria-label="Close image"><X/></button>
           <button type="button" className="editorial-image-nav editorial-image-prev" onClick={() => setFocusedImage(current => current === null ? null : (current - 1 + images.length) % images.length)} aria-label="Previous image"><ChevronLeft/></button>
           <img src={images[focusedImage].url} alt={images[focusedImage].alt || board.title}/>
           <button type="button" className="editorial-image-nav editorial-image-next" onClick={() => setFocusedImage(current => current === null ? null : (current + 1) % images.length)} aria-label="Next image"><ChevronRight/></button>
+          {images[focusedImage].caption && <p className="editorial-viewer-caption">{images[focusedImage].caption}</p>}
         </div>
       )}
     </section>
@@ -913,6 +942,12 @@ function AdminPortal({
             <h2 className="text-xl font-extrabold text-black">Admin Login</h2>
             <p className="mt-1 text-xs text-black/50">Portfolio Content Manager</p>
           </div>
+          {!isSupabaseConfigured && (
+            <div role="alert" className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">
+              <strong className="mb-1 block">Admin sign-in is not configured for this deployment.</strong>
+              Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to the Vercel environment for this branch, then redeploy. A Supabase Auth admin account is also required.
+            </div>
+          )}
           <form onSubmit={handleLogin} className="space-y-3">
             <div>
               <label className="text-[11px] font-bold text-black/60 block mb-1">Username</label>
