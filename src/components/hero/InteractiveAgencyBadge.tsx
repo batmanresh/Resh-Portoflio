@@ -43,12 +43,13 @@ export default function InteractiveAgencyBadge({ name, roleLine, location = 'Dub
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setFlipped(value => !value); }
   };
-  const transform = `translate3d(${offset.x}px,${offset.y}px,0) rotateX(${offset.tiltX}deg) rotateY(${offset.tiltY}deg)`;
+  const transform = `rotateX(${offset.tiltX}deg) rotateY(${offset.tiltY}deg)`;
 
   return (
     <div className={`agency-pass-stage ${dragging ? 'is-dragging' : ''}`}>
       <div className="agency-pass-meta"><span>PERSONAL IDENTITY / 001</span><span>DRAG TO PLAY</span></div>
       <div className="agency-pass-swing" style={{ transform: `translateX(${offset.x}px) translateY(${offset.y}px) rotate(${offset.rotate}deg)`, transition: dragging ? 'none' : 'transform 850ms cubic-bezier(.16,1,.3,1)' }}>
+        <div className="agency-pass-pendulum">
         <svg className="agency-pass-lanyard" viewBox="0 0 160 230" aria-hidden="true">
           <defs>
             <linearGradient id="pass-strap" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stopColor="#6d7044"/><stop offset=".5" stopColor="#a1a16b"/><stop offset="1" stopColor="#66683e"/></linearGradient>
@@ -80,6 +81,7 @@ export default function InteractiveAgencyBadge({ name, roleLine, location = 'Dub
               <span className="agency-pass-serial">RESHAM GURUNG / DUBAI</span>
             </section>
           </div>
+        </div>
         </div>
       </div>
       <div className="agency-pass-instruction"><RotateCw size={13}/><span>DRAG THE PASS <i>·</i> CLICK TO FLIP</span></div>
