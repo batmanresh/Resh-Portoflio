@@ -719,10 +719,10 @@ function AdminPortal({
     event.preventDefault();
     const cleaned = boardsDraft.map(board => ({
       ...board,
-      eyebrow: board.eyebrow.trim(),
-      title: board.title.trim(),
+      eyebrow: (board.eyebrow || '').trim(),
+      title: (board.title || '').trim(),
       description: (board.description || '').trim(),
-      images: (board.images || []).filter(image => image.url.trim()).map(image => ({ ...image, url: image.url.trim(), alt: image.alt.trim(), caption: (image.caption || '').trim() }))
+      images: (board.images || []).filter(image => image.url.trim()).map(image => ({ ...image, url: image.url.trim(), alt: (image.alt || '').trim(), caption: (image.caption || '').trim() }))
     }));
     if (cleaned.some(board => !board.title)) { notify('Give each board a short title.'); return; }
     if (cleaned.some(board => board.images.some(image => !/^https?:\/\//i.test(image.url)))) { notify('Each image needs a valid http or https URL.'); return; }
