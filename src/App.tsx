@@ -1203,12 +1203,31 @@ function AdminPortal({
                     <label className="text-[11px] font-bold">Small label<input value={board.eyebrow} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, eyebrow: e.target.value } : item))} placeholder="Optional" className={`${inputCls} mt-1`}/></label>
                     <label className="text-[11px] font-bold">Board title *<input required value={board.title} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, title: e.target.value } : item))} className={`${inputCls} mt-1`}/></label>
                   </div>
-                  <label className="block text-[11px] font-bold">Short description <span className="font-normal text-black/40">(optional)</span><textarea rows={2} value={board.description || ''} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, description: e.target.value } : item))} className={`${inputCls} mt-1`}/></label>
+                  <label className="block text-[11px] font-bold">Short description <span className="font-normal text-black/40">(optional)</span><textarea rows={2} value={board.description || ''} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, description: e.target.value } : item))} className={inputCls + ' mt-1'}/></label>
+                  <div className="overflow-hidden rounded-2xl border border-black/10 bg-[#171715] text-[#f6f5f1]">
+                    <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                      <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/45">Live board preview</span>
+                      <span className="text-[9px] font-mono text-white/45">{board.images.length} {board.images.length === 1 ? 'IMAGE' : 'IMAGES'}</span>
+                    </div>
+                    <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] sm:items-center sm:p-5">
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold uppercase tracking-[.18em] text-[#d58b70]">{board.eyebrow || 'EDITORIAL'}</p>
+                        <h4 className="mt-2 break-words text-2xl font-semibold leading-[.95] tracking-[-.055em] sm:text-3xl">{board.title || 'Untitled board'}</h4>
+                        <p className="mt-3 line-clamp-3 text-[11px] leading-relaxed text-white/55">{board.description || 'Your board description will appear here.'}</p>
+                      </div>
+                      <div className="grid min-h-[116px] grid-cols-4 gap-1.5">
+                        {board.images.slice(0, 4).map((asset, previewIndex) => <div key={asset.id || previewIndex} className="relative aspect-[3/4] overflow-hidden rounded-md bg-white/10">
+                          {asset.url ? <img src={asset.url} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-[8px] text-white/35">Add URL</div>}
+                        </div>)}
+                        {!board.images.length && <div className="col-span-4 flex items-center justify-center rounded-md border border-dashed border-white/20 text-[10px] text-white/40">Your images will appear here</div>}
+                      </div>
+                    </div>
+                  </div>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between"><h4 className="text-xs font-bold">Images ({board.images.length})</h4><button type="button" onClick={() => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: [...item.images, { id: `img-${Date.now()}`, url: '', alt: '', caption: '' }] } : item))} className="rounded-full border border-black/15 px-3 py-1.5 text-[10px] font-bold">+ Add image</button></div>
                     {board.images.map((image, imageIndex) => (
-                      <div key={image.id || imageIndex} className="grid gap-3 rounded-xl bg-[#f6f5f1] p-3 sm:grid-cols-[88px_1fr]">
-                        <div className="h-20 overflow-hidden rounded-lg bg-black/10">{image.url && <img src={image.url} alt="" className="h-full w-full object-cover"/>}</div>
+                      <div key={image.id || imageIndex} className="grid gap-3 rounded-xl border border-black/5 bg-[#f6f5f1] p-3 sm:grid-cols-[132px_1fr]">
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-black/10">{image.url ? <img src={image.url} alt="" className="h-full w-full object-cover"/> : <div className="flex h-full items-center justify-center text-[10px] text-black/35">Image preview</div>}<span className="absolute bottom-1.5 left-1.5 rounded bg-black/65 px-1.5 py-1 font-mono text-[8px] text-white">{String(imageIndex + 1).padStart(2,'0')}</span></div>
                         <div className="min-w-0 space-y-2">
                           <input type="url" value={image.url} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.map((asset, j) => j === imageIndex ? { ...asset, url: e.target.value } : asset) } : item))} placeholder="Image URL (https://...)" aria-label="Image URL" className={inputCls}/>
                           <div className="grid gap-2 sm:grid-cols-2"><input value={image.alt} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.map((asset, j) => j === imageIndex ? { ...asset, alt: e.target.value } : asset) } : item))} placeholder="Image description (alt text)" aria-label="Image description" className={inputCls}/><input value={image.caption || ''} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, images: item.images.map((asset, j) => j === imageIndex ? { ...asset, caption: e.target.value } : asset) } : item))} placeholder="Caption (optional)" aria-label="Image caption" className={inputCls}/></div>
