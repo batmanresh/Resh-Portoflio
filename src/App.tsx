@@ -452,7 +452,7 @@ function ExperienceRow({ item, index }: { item: Experience; index: number }) {
 // LIGHTBOX
 // ============================================================================
 function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
-  const suppliedAssets = [
+  const suppliedAssets: NonNullable<Project['media']> = [
     { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/All_g0udqd.jpg', type: 'image' as const },
     { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5802_tfxp7t.jpg', type: 'image' as const },
     { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5810_s0qev9.jpg', type: 'image' as const },
