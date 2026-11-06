@@ -452,15 +452,25 @@ function ExperienceRow({ item, index }: { item: Experience; index: number }) {
 // LIGHTBOX
 // ============================================================================
 function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
-  const mediaItems: NonNullable<Project['media']> = item.media?.length ? item.media : [{ url: item.image, type: (item.mediaType || 'image') as 'image' | 'video', thumbnailUrl: undefined }];
+  const suppliedAssets = [
+    { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/All_g0udqd.jpg', type: 'image' as const },
+    { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5802_tfxp7t.jpg', type: 'image' as const },
+    { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5810_s0qev9.jpg', type: 'image' as const },
+    { url: 'https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/Birdal1_ss9kr2.jpg', type: 'image' as const }
+  ];
+  const baseMedia: NonNullable<Project['media']> = item.media?.length ? item.media : [{ url: item.image, type: (item.mediaType || 'image') as 'image' | 'video' }];
+  const mediaItems = item.id === 'asteria-launch'
+    ? [...baseMedia, ...suppliedAssets.filter(asset => !baseMedia.some(media => media.url === asset.url))]
+    : baseMedia;
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [focusPhoto, setFocusPhoto] = useState(false);
   const activeMedia = mediaItems[activeMediaIndex] || mediaItems[0];
+
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowRight') setActiveMediaIndex(index => (index + 1) % mediaItems.length);
-      if (e.key === 'ArrowLeft') setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length);
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowRight') setActiveMediaIndex(index => (index + 1) % mediaItems.length);
+      if (event.key === 'ArrowLeft') setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length);
     };
     window.addEventListener('keydown', handler);
     document.body.style.overflow = 'hidden';
@@ -471,69 +481,57 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
   }, [onClose, mediaItems.length]);
 
   return (
-    <div
-      className="lightbox-backdrop fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-2 md:p-3"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      role="dialog"
-      aria-modal="true"
-      aria-label={item.title}
-    >
-      <div className="lightbox-panel relative flex h-[calc(100svh-16px)] max-h-[96svh] w-[calc(100vw-16px)] max-w-[1600px] flex-col rounded-2xl overflow-hidden bg-[#171715] shadow-2xl md:h-[94svh] md:w-[96vw]">
-        <button type="button" onClick={() => setFocusPhoto(value => !value)} className="absolute left-4 top-4 z-10 rounded-full border border-white/15 bg-black/65 px-3.5 py-2 text-[11px] font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/20" aria-pressed={focusPhoto}>
-          {focusPhoto ? 'Show project details' : 'Expand photo'}
-        </button>
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/25"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
-        {/* Media */}
-        <div className={`lightbox-content flex min-h-0 flex-1 flex-col bg-[#10100f] ${focusPhoto ? 'p-0' : 'p-2 md:p-3'}`}>
-          <div className="project-viewer-media relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black">
-            {activeMedia?.type === 'video' ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay className="h-full max-h-full w-full object-contain" /> : <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="h-full max-h-full w-full object-contain" />}
-            {mediaItems.length > 1 && <><button type="button" onClick={() => setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length)} aria-label="Previous media" className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/85"><ChevronLeft className="h-5 w-5" /></button><button type="button" onClick={() => setActiveMediaIndex(index => (index + 1) % mediaItems.length)} aria-label="Next media" className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/85"><ChevronRight className="h-5 w-5" /></button></>}
-            {mediaItems.length > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1.5 font-mono text-[10px] text-white">{String(activeMediaIndex + 1).padStart(2, '0')} / {String(mediaItems.length).padStart(2, '0')}</span>}
+    <div className="editorial-backdrop fixed inset-0 z-[200] overflow-y-auto bg-[#e9e6df]" onClick={event => { if (event.target === event.currentTarget) onClose(); }} role="dialog" aria-modal="true" aria-label={item.title}>
+      <button type="button" onClick={onClose} className="editorial-close" aria-label="Close project"><X className="h-5 w-5"/></button>
+      <article className="editorial-sheet">
+        <header className="editorial-masthead"><span>RESHAM GURUNG / SELECTED WORK</span><span>PROJECT FILE — {item.category.toUpperCase()}</span><span>SCROLL TO EXPLORE ↓</span></header>
+        <section className="editorial-opening">
+          <div className="editorial-opening-copy">
+            <p className="eyebrow">{item.category} / PROJECT FEATURE</p>
+            <h1>{item.title}</h1>
+            <p className="editorial-deck">{item.summary}</p>
+            <div className="editorial-role"><span>MY ROLE</span><strong>{item.role || 'Strategy · Creative direction · Execution'}</strong></div>
+            <div className="editorial-opening-index"><span>01</span><span>THE STORY BEHIND THE WORK</span></div>
           </div>
-          {!focusPhoto && mediaItems.length > 1 && <div className="mt-2 flex gap-2 overflow-x-auto px-1 pb-1">{mediaItems.map((media, index) => <button key={`${media.url}-${index}`} onClick={() => setActiveMediaIndex(index)} aria-label={`Show photo ${index + 1} of ${mediaItems.length}`} aria-pressed={activeMediaIndex === index} className={`relative h-12 w-[72px] shrink-0 overflow-hidden rounded-lg border-2 transition-opacity md:h-14 md:w-20 ${activeMediaIndex === index ? 'border-[#e48967]' : 'border-white/10 opacity-60 hover:opacity-100'}`}>{media.thumbnailUrl ? <img src={media.thumbnailUrl} alt="" className="h-full w-full object-cover" /> : media.type === 'video' ? <span className="flex h-full items-center justify-center bg-[#292927] text-white"><Film className="h-4 w-4" /></span> : <img src={media.url} alt="" className="h-full w-full object-cover" />}</button>)}</div>}
-        </div>
+          <div className="editorial-cover">
+            {activeMedia?.type === 'video'
+              ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay className="editorial-cover-media"/>
+              : <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="editorial-cover-media"/>}
+            <button type="button" className="editorial-expand" onClick={() => setFocusPhoto(value => !value)}>{focusPhoto ? 'Return to story' : 'View image larger'} ↗</button>
+          </div>
+        </section>
 
-        {/* Info bar */}
-        {!focusPhoto && <div className="lightbox-info shrink-0 border-t border-white/10 px-4 py-3 text-white md:px-6 md:py-4">
-          <button onClick={onClose} className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs font-bold text-white md:hidden" aria-label="Back to work"><ChevronLeft className="h-4 w-4" /> Back to work</button>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="eyebrow text-[#e48967] font-bold mb-1">{item.category}</p>
-              <h2 className="text-lg font-extrabold tracking-tight">{item.title}</h2>
-              <p className="mt-1 text-sm text-white/60">{item.summary}</p>
+        {!focusPhoto && <>
+          <section className="editorial-context">
+            <div><p className="eyebrow">THE THINKING</p><h2>Good creative work<br/><em>starts with a point of view.</em></h2></div>
+            <p>{item.summary} The goal was to bring the idea to life through considered creative direction, clear communication and details that make the experience memorable.</p>
+          </section>
+
+          <section className="editorial-gallery">
+            <div className="editorial-gallery-heading"><p className="eyebrow">02 / VISUAL ARCHIVE</p><span>{String(activeMediaIndex + 1).padStart(2,'0')} — {String(mediaItems.length).padStart(2,'0')}</span></div>
+            <div className="editorial-gallery-stage">
+              {mediaItems.map((media, index) => (
+                <button type="button" key={media.url + index} className={`editorial-gallery-item ${activeMediaIndex === index ? 'is-active' : ''} ${index % 3 === 0 ? 'gallery-item-large' : ''}`} onClick={() => setActiveMediaIndex(index)} aria-label={`View media ${index + 1}`}>
+                  {media.type === 'video' ? <span className="editorial-video-tile"><Film className="h-8 w-8"/><small>VIDEO</small></span> : <img src={media.thumbnailUrl || media.url} alt={`${item.title} — visual ${index + 1}`} loading="lazy"/>}
+                  <span className="editorial-gallery-number">{String(index + 1).padStart(2,'0')}</span>
+                </button>
+              ))}
             </div>
-            {item.outcome && (
-              <div className="shrink-0 rounded-xl border border-white/15 bg-white/8 px-4 py-3 max-w-xs">
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1">Outcome</p>
-                <p className="text-xs font-semibold text-white/80">{item.outcome}</p>
-              </div>
-            )}
-          </div>
-          {item.link?.trim() && (
-            <a
-              href={item.link}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#e48967] underline underline-offset-4 hover:text-white"
-            >
-              View project ↗
-            </a>
-          )}
-        </div>}
-      </div>
+            {mediaItems.length > 1 && <div className="editorial-gallery-controls"><button type="button" onClick={() => setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length)}><ChevronLeft size={16}/> PREVIOUS</button><button type="button" onClick={() => setActiveMediaIndex(index => (index + 1) % mediaItems.length)}>NEXT <ChevronRight size={16}/></button></div>}
+          </section>
+
+          <section className="editorial-outcome">
+            <p className="eyebrow">03 / WHAT MOVED FORWARD</p>
+            <h2>{item.outcome || 'A considered idea, brought to life.'}</h2>
+            <div className="editorial-outcome-bottom"><span>STRATEGY → PEOPLE → EXECUTION</span>{item.link?.trim() && <a href={item.link} target="_blank" rel="noreferrer">VIEW PROJECT ↗</a>}</div>
+          </section>
+          <footer className="editorial-footer"><span>END OF PROJECT FILE</span><button type="button" onClick={onClose}>BACK TO ALL WORK ↑</button><span>RESHAM GURUNG © {new Date().getFullYear()}</span></footer>
+        </>}
+      </article>
     </div>
   );
 }
 
-// ============================================================================
 // ADMIN PORTAL
 // ============================================================================
 function AdminPortal({
@@ -1392,7 +1390,29 @@ export default function App() {
         {/* ================================================================ */}
         {/* 2. SELECTED WORK                                                 */}
         {/* ================================================================ */}
-        <section id="work" className="scroll-mt-20 border-t border-black/10 bg-[#e9e7e1] px-5 py-20 md:px-10 md:py-28">
+                {/* VISUAL NOTES — before selected work */}
+        <section className="visual-notes visual-notes-before" aria-label="Visual notes and creative references">
+          <div className="visual-notes-inner">
+            <div className="visual-notes-heading">
+              <p className="eyebrow">A visual point of view / 01</p>
+              <h2>Ideas take shape<br/><em>before the spotlight.</em></h2>
+              <p>Fragments, references and moments that set the tone for the work.</p>
+            </div>
+            <div className="moodboard moodboard-before">
+              <figure className="moodboard-piece moodboard-piece-main">
+                <img src="https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/All_g0udqd.jpg" alt="Creative campaign collage and visual direction" loading="lazy"/>
+                <figcaption><span>01 / VISUAL LANGUAGE</span><span>COLLECT · COMPOSE · REFINE</span></figcaption>
+              </figure>
+              <figure className="moodboard-piece moodboard-piece-side">
+                <img src="https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5802_tfxp7t.jpg" alt="Behind-the-scenes creative work" loading="lazy"/>
+                <figcaption><span>02 / IN THE MOMENT</span></figcaption>
+              </figure>
+              <span className="moodboard-mark" aria-hidden="true">RG—01</span>
+            </div>
+          </div>
+        </section>
+
+<section id="work" className="scroll-mt-20 border-t border-black/10 bg-[#e9e7e1] px-5 py-20 md:px-10 md:py-28">
           <div className="mx-auto max-w-[1340px]">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
               <div>
@@ -1481,6 +1501,28 @@ export default function App() {
             <p className="mt-8 text-xs text-black/40 text-center">
               Showing {filteredProjects.length} of {content.projects.length} projects
             </p>
+          </div>
+        </section>
+
+        {/* CREATIVE FRAGMENTS — after selected work */}
+        <section className="visual-notes visual-notes-after" aria-label="More creative work and visual details">
+          <div className="visual-notes-inner visual-notes-after-inner">
+            <div className="moodboard moodboard-after">
+              <figure className="moodboard-piece moodboard-piece-wide">
+                <img src="https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/_15A5810_s0qev9.jpg" alt="Creative production and campaign detail" loading="lazy"/>
+                <figcaption><span>03 / THE DETAILS</span><span>GOOD WORK LIVES IN THE DETAILS</span></figcaption>
+              </figure>
+              <figure className="moodboard-piece moodboard-piece-tall">
+                <img src="https://res.cloudinary.com/dvhs1dbxh/image/upload/v1792324376/Birdal1_ss9kr2.jpg" alt="Editorial campaign moment" loading="lazy"/>
+                <figcaption><span>04 / THE FINISH</span></figcaption>
+              </figure>
+              <span className="moodboard-sticker" aria-hidden="true">A LITTLE<br/>MORE<br/><i>INSPIRATION</i></span>
+            </div>
+            <div className="visual-notes-heading visual-notes-after-heading">
+              <p className="eyebrow">A visual point of view / 02</p>
+              <h2>Not everything<br/>fits in a <em>case study.</em></h2>
+              <p>Creative details, campaign moments and the visual thinking in between.</p>
+            </div>
           </div>
         </section>
 
