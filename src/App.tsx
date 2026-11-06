@@ -560,7 +560,7 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
 function EditorialBoardView({ board, index }: { board: EditorialBoard; index: number }) {
   const [focusedImage, setFocusedImage] = useState<number | null>(null);
   const images = board.images || [];
-  const featuredImages = images.slice(0, 5);
+  const featuredImages = images.slice(0, 3);
 
   useEffect(() => {
     if (focusedImage === null) return;
@@ -605,7 +605,7 @@ function EditorialBoardView({ board, index }: { board: EditorialBoard; index: nu
               <img src={image.url} alt={image.alt || board.title} loading={imageIndex > 1 ? 'lazy' : 'eager'}/>
               <span className="editorial-collage-grain"/>
               <span className="editorial-collage-caption"><i>{String(imageIndex + 1).padStart(2, '0')}</i>{image.caption || (imageIndex === 0 ? 'THE OPENING FRAME' : 'A MOMENT IN MOTION')}</span>
-              {imageIndex === 4 && images.length > 5 && <span className="editorial-collage-more">+{images.length - 5} MORE</span>}
+              {imageIndex === 2 && images.length > 3 && <span className="editorial-collage-more">+{images.length - 3} MORE · CLICK TO EXPLORE</span>}
               <span className="editorial-collage-arrow">↗</span>
             </button>
           ))}
