@@ -564,6 +564,10 @@ function EditorialBoardView({ board, index }: { board: EditorialBoard; index: nu
   const activeImage = images[activeIndex];
 
   useEffect(() => {
+    setActiveIndex(current => Math.min(current, Math.max(0, images.length - 1)));
+  }, [images.length]);
+
+  useEffect(() => {
     if (focusedImage === null) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setFocusedImage(null);
@@ -1127,7 +1131,7 @@ function AdminPortal({
               </div>
               {boardsDraft.map((board, boardIndex) => (
                 <section key={board.id} className="space-y-4 rounded-2xl border border-black/10 bg-white p-4 md:p-5">
-                  <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-bold uppercase tracking-widest text-[#bd5938]">Board {String(boardIndex + 1).padStart(2, '0')}</span><button type="button" onClick={() => setBoardsDraft(boardsDraft.filter((_, i) => i !== boardIndex))} className="rounded-lg border border-red-200 p-2 text-red-600" aria-label="Delete board"><Trash2 size={15}/></button></div>
+                  <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-bold uppercase tracking-widest text-[#bd5938]">Board {String(boardIndex + 1).padStart(2, '0')}</span><div className="flex items-center gap-2"><button type="button" disabled={boardIndex === 0} onClick={() => setBoardsDraft(current => { const next = [...current]; [next[boardIndex - 1], next[boardIndex]] = [next[boardIndex], next[boardIndex - 1]]; return next; })} className="rounded-lg border border-black/10 px-2 py-1 text-[10px] font-bold disabled:opacity-30">Move up</button><button type="button" disabled={boardIndex === boardsDraft.length - 1} onClick={() => setBoardsDraft(current => { const next = [...current]; [next[boardIndex + 1], next[boardIndex]] = [next[boardIndex], next[boardIndex + 1]]; return next; })} className="rounded-lg border border-black/10 px-2 py-1 text-[10px] font-bold disabled:opacity-30">Move down</button><button type="button" onClick={() => setBoardsDraft(boardsDraft.filter((_, i) => i !== boardIndex))} className="rounded-lg border border-red-200 p-2 text-red-600" aria-label="Delete board"><Trash2 size={15}/></button></div></div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="text-[11px] font-bold">Small label<input value={board.eyebrow} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, eyebrow: e.target.value } : item))} placeholder="Optional" className={`${inputCls} mt-1`}/></label>
                     <label className="text-[11px] font-bold">Board title *<input required value={board.title} onChange={e => setBoardsDraft(boardsDraft.map((item, i) => i === boardIndex ? { ...item, title: e.target.value } : item))} className={`${inputCls} mt-1`}/></label>
