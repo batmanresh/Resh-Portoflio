@@ -47,7 +47,7 @@ export default function InteractiveAgencyBadge({ name, roleLine, location = 'Dub
         p.angle = p.target;
         p.velocity = 0;
       }
-      if (rigRef.current) rigRef.current.style.transform = `rotate(${p.angle.toFixed(3)}deg)`;
+      if (rigRef.current) rigRef.current.style.setProperty('--swing-angle', `${p.angle.toFixed(3)}deg`);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
