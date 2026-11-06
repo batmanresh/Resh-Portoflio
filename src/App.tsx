@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabase';
+import InteractiveAgencyBadge from './components/hero/InteractiveAgencyBadge';
 import {
   ArrowUpRight,
   Copy,
@@ -1371,20 +1372,25 @@ export default function App() {
         {/* ================================================================ */}
         {/* 1. HERO                                                          */}
         {/* ================================================================ */}
-        <section id="home" className="relative flex min-h-[calc(100svh-64px)] items-center overflow-hidden px-5 pb-12 pt-28 md:px-10 md:pb-14 md:pt-24">
+        <section id="home" className="hero-section relative flex min-h-[calc(100svh-64px)] items-center overflow-hidden px-5 pb-12 pt-28 md:px-10 md:pb-14 md:pt-24">
           <div className="hero-glow-1 pointer-events-none absolute -top-24 right-0 h-[520px] w-[520px] rounded-full bg-gradient-to-br from-[#bd5938]/12 via-[#e48967]/8 to-transparent blur-3xl" />
           <div className="hero-glow-2 pointer-events-none absolute -bottom-32 -left-24 h-[440px] w-[440px] rounded-full bg-gradient-to-tr from-[#f0df75]/10 via-[#c9b9ed]/8 to-transparent blur-3xl" />
           <div className="hero-grain" />
-          <div className="relative mx-auto w-full max-w-[1140px]">
-            <h1 className="reveal max-w-4xl text-[clamp(2.7rem,6vw,5.6rem)] font-extrabold leading-[0.98] tracking-[-0.055em] text-[#171715]">Thoughtful marketing. Measurable growth.<span className="mt-2 block font-serif font-normal italic text-[#bd5938]">Built with people in mind.</span></h1>
-            <div className="reveal reveal-d1 mt-5 max-w-2xl">
-              <p className="text-lg leading-relaxed text-black/65 md:text-xl">Hi, I'm <strong className="font-bold text-black">{content.name}</strong> ? {content.roleLine}.</p>
-              <p className="mt-3 text-sm leading-relaxed text-black/50 md:text-base">{content.intro}</p>
+          <div className="relative mx-auto grid w-full max-w-[1340px] items-center gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(340px,.7fr)] lg:gap-5">
+            <div className="relative z-10">
+              <h1 className="reveal max-w-4xl text-[clamp(2.7rem,6vw,5.6rem)] font-extrabold leading-[0.98] tracking-[-0.055em] text-[#171715]">Thoughtful marketing. Measurable growth.<span className="mt-2 block font-serif font-normal italic text-[#bd5938]">Built with people in mind.</span></h1>
+              <div className="reveal reveal-d1 mt-5 max-w-2xl">
+                <p className="text-lg leading-relaxed text-black/65 md:text-xl">Hi, I'm <strong className="font-bold text-black">{content.name}</strong> — {content.roleLine}.</p>
+                <p className="mt-3 text-sm leading-relaxed text-black/50 md:text-base">{content.intro}</p>
+              </div>
+              <div className="reveal reveal-d2 mt-8 flex flex-wrap items-center gap-3">
+                <a href="#work" className="focus-ring group inline-flex items-center gap-2 rounded-full bg-black px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#bd5938]"><span>Explore the work</span><ArrowDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" /></a>
+                <a href="#contact" className="focus-ring group inline-flex items-center gap-2 rounded-full border border-black/20 bg-white/80 px-6 py-3.5 text-sm font-bold text-black transition-all hover:-translate-y-0.5 hover:border-black hover:bg-white"><span>Say hello</span><ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a>
+                <button type="button" onClick={copyHeroEmail} className="focus-ring inline-flex items-center gap-2 px-2 py-3 text-xs font-semibold text-black/55 transition-colors hover:text-black">{heroCopied ? <span className="flex items-center gap-1.5 font-bold text-emerald-700"><Check className="h-3.5 w-3.5" />Copied!</span> : <span className="flex items-center gap-1.5 underline underline-offset-4 decoration-black/25"><Copy className="h-3.5 w-3.5" />Copy email</span>}</button>
+              </div>
             </div>
-            <div className="reveal reveal-d2 mt-8 flex flex-wrap items-center gap-3">
-              <a href="#work" className="focus-ring group inline-flex items-center gap-2 rounded-full bg-black px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#bd5938]"><span>Explore the work</span><ArrowDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" /></a>
-              <a href="#contact" className="focus-ring group inline-flex items-center gap-2 rounded-full border border-black/20 bg-white/80 px-6 py-3.5 text-sm font-bold text-black transition-all hover:-translate-y-0.5 hover:border-black hover:bg-white"><span>Say hello</span><ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a>
-              <button type="button" onClick={copyHeroEmail} className="focus-ring inline-flex items-center gap-2 px-2 py-3 text-xs font-semibold text-black/55 transition-colors hover:text-black">{heroCopied ? <span className="flex items-center gap-1.5 font-bold text-emerald-700"><Check className="h-3.5 w-3.5" />Copied!</span> : <span className="flex items-center gap-1.5 underline underline-offset-4 decoration-black/25"><Copy className="h-3.5 w-3.5" />Copy email</span>}</button>
+            <div className="reveal reveal-d2 relative mx-auto flex w-full max-w-[470px] justify-center lg:justify-end">
+              <InteractiveAgencyBadge name={content.name} roleLine={content.roleLine} location={content.location || 'Dubai, UAE'} />
             </div>
           </div>
         </section>
