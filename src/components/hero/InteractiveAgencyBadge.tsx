@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent, type KeyboardEvent } from 'react';
 import { ArrowUpRight, RotateCw } from 'lucide-react';
 import './InteractiveAgencyBadge.css';
 
@@ -15,7 +15,6 @@ export default function InteractiveAgencyBadge({
   location = 'Dubai, UAE',
   portraitSrc
 }: Props) {
-  const stageRef = useRef<HTMLDivElement>(null);
   const pointerStart = useRef({ x: 0, y: 0, moved: false });
   const dragOrigin = useRef({ x: 0, y: 0 });
   const [drag, setDrag] = useState({ x: 0, y: 0, rotate: 0 });
@@ -32,7 +31,7 @@ export default function InteractiveAgencyBadge({
     return () => query.removeEventListener?.('change', update);
   }, []);
 
-  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest('button')) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     pointerStart.current = { x: event.clientX, y: event.clientY, moved: false };
@@ -58,7 +57,7 @@ export default function InteractiveAgencyBadge({
     else setDrag({ x: 0, y: 0, rotate: 0 });
   };
 
-  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       setFlipped(value => !value);
@@ -69,7 +68,7 @@ export default function InteractiveAgencyBadge({
   const strapPath = `M 155 0 C 155 72, ${155 - drag.x * 0.12} 92, ${155 + drag.x * 0.08} 158`;
 
   return (
-    <div className={`agency-badge-stage ${reducedMotion ? 'is-reduced-motion' : ''}`} ref={stageRef}>
+    <div className={`agency-badge-stage ${reducedMotion ? 'is-reduced-motion' : ''}`}>
       <div className="agency-badge-index" aria-hidden="true">
         <span>FIELD NOTES / 001</span><span>IDENTITY OBJECT</span>
       </div>
