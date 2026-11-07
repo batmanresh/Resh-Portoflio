@@ -558,16 +558,8 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
 // EDITORIAL BOARDS — INTERACTIVE IMAGE EXPLORER
 // ============================================================================
 function EditorialBoardView({ board, index }: { board: EditorialBoard; index: number }) {
-  const [activeIndex, setActiveIndex] = useState(0);
   const [focusedImage, setFocusedImage] = useState<number | null>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ pointerId: number; startX: number; scrollLeft: number } | null>(null);
-  const draggedRef = useRef(false);
   const images = board.images || [];
-
-  useEffect(() => {
-    setActiveIndex(current => Math.min(current, Math.max(0, images.length - 1)));
-  }, [images.length]);
 
   useEffect(() => {
     if (focusedImage === null) return;
@@ -613,51 +605,30 @@ function EditorialBoardView({ board, index }: { board: EditorialBoard; index: nu
         <h2>{board.title}</h2>
         {board.description?.trim() && <p className="editorial-board-description">{board.description}</p>}
       </div>
-      <div className="editorial-board-track-wrap">
-        <div
-          className="editorial-board-track"
-          ref={trackRef}
-          onScroll={syncActiveImage}
-          onPointerDown={event => {
-            if (event.pointerType === 'mouse' && event.button !== 0) return;
-            dragRef.current = { pointerId: event.pointerId, startX: event.clientX, scrollLeft: event.currentTarget.scrollLeft };
-            draggedRef.current = false;
-            event.currentTarget.setPointerCapture(event.pointerId);
-          }}
-          onPointerMove={event => {
-            if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
-            const delta = event.clientX - dragRef.current.startX;
-            if (Math.abs(delta) > 6) draggedRef.current = true;
-            if (draggedRef.current) event.currentTarget.scrollLeft = dragRef.current.scrollLeft - delta;
-          }}
-          onPointerUp={event => { if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null; }}
-          onPointerCancel={() => { dragRef.current = null; }}
-          onClickCapture={event => { if (draggedRef.current) { event.preventDefault(); event.stopPropagation(); draggedRef.current = false; } }}
-          aria-label="Editorial image gallery"
-        >
-          {images.map((image, imageIndex) => (
-            <button type="button" key={image.id || image.url} className={`editorial-board-card editorial-board-card-${imageIndex % 4}`} onClick={() => setFocusedImage(imageIndex)} aria-label={`View image ${imageIndex + 1}: ${image.alt || board.title}`}>
-              <img src={image.url} alt={image.alt || board.title} loading={imageIndex > 1 ? 'lazy' : 'eager'}/>
-              <span className="editorial-board-card-shade"/>
-              <span className="editorial-board-card-meta">
-                <span>{image.caption || board.title}</span>
-                <span>{String(imageIndex + 1).padStart(2, '0')}</span>
-              </span>
-              <span className="editorial-board-card-open">↗</span>
-            </button>
-          ))}
-        </div>
-        <div className="editorial-board-footer">
-          <div className="editorial-board-progress" aria-hidden="true"><span style={{ width: `${((activeIndex + 1) / images.length) * 100}%` }}/></div>
-          <div className="editorial-board-footer-controls">
-            <span className="editorial-board-count">{String(activeIndex + 1).padStart(2, '0')} <i>/</i> {String(images.length).padStart(2, '0')}</span>
-            <span className="editorial-board-hint">DRAG OR SCROLL TO EXPLORE</span>
-            <div className="editorial-board-controls">
-              <button type="button" onClick={() => goToImage(activeIndex - 1)} aria-label="Previous image"><ChevronLeft size={18}/></button>
-              <button type="button" onClick={() => goToImage(activeIndex + 1)} aria-label="Next image"><ChevronRight size={18}/></button>
-            </div>
-          </div>
-        </div>
+      <div className="editorial-board-gallery" aria-label="Editorial image collection">
+        {images.map((image, imageIndex) => (
+          <button
+            type="button"
+            key={image.id || image.url}
+            className={`editorial-board-card editorial-board-card-${imageIndex % 4}`}
+            onClick={() => setFocusedImage(imageIndex)}
+            aria-label={`Open image ${imageIndex + 1}: ${image.alt || image.caption || board.title}`}
+          >
+            <span className="editorial-board-card-index">{String(imageIndex + 1).padStart(2, '0')}</span>
+            <span className="editorial-board-card-art" aria-hidden="true">
+              <span className="editorial-board-card-art-orbit"/>
+              <span className="editorial-board-card-art-word">{String(imageIndex + 1).padStart(2, '0')}</span>
+            </span>
+            <span className="editorial-board-card-meta">
+              <span>{image.caption || image.alt || board.title}</span>
+              <span className="editorial-board-card-action">OPEN <span aria-hidden="true">↗</span></span>
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className="editorial-board-footer">
+        <span className="editorial-board-count">{String(images.length).padStart(2, '0')} <i>/</i> VISUALS</span>
+        <span className="editorial-board-hint">SELECT A FRAME TO REVEAL THE IMAGE</span>
       </div>
       {focusedImage !== null && images[focusedImage] && (
         <div className="editorial-image-viewer" role="dialog" aria-modal="true" aria-label="Expanded editorial image" onClick={event => { if (event.target === event.currentTarget) setFocusedImage(null); }}>
