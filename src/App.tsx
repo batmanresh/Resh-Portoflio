@@ -574,27 +574,6 @@ function EditorialBoardView({ board, index }: { board: EditorialBoard; index: nu
 
   if (!images.length) return null;
 
-  const goToImage = (imageIndex: number) => {
-    const next = (imageIndex + images.length) % images.length;
-    setActiveIndex(next);
-    const card = trackRef.current?.children[next] as HTMLElement | undefined;
-    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  };
-
-  const syncActiveImage = () => {
-    const track = trackRef.current;
-    if (!track) return;
-    const center = track.getBoundingClientRect().left + track.clientWidth / 2;
-    let closestIndex = 0;
-    let closestDistance = Number.POSITIVE_INFINITY;
-    Array.from(track.children).forEach((child, childIndex) => {
-      const rect = (child as HTMLElement).getBoundingClientRect();
-      const distance = Math.abs(rect.left + rect.width / 2 - center);
-      if (distance < closestDistance) { closestDistance = distance; closestIndex = childIndex; }
-    });
-    setActiveIndex(closestIndex);
-  };
-
   return (
     <section className={`editorial-board editorial-board-${index % 2 ? 'reverse' : 'normal'}`} aria-label={board.title || 'Editorial board'}>
       <div className="editorial-board-topline">
