@@ -49,7 +49,7 @@ export type Project = {
   image: string;
   outcome: string;
   link?: string;
-  media?: { url: string; type: 'image' | 'video'; thumbnailUrl?: string }[];
+  media?: { url: string; type: 'image' | 'video'; thumbnailUrl?: string; orientation?: 'portrait' | 'landscape' }[];
 };
 
 export type Principle = {
@@ -515,9 +515,9 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
             <div className="editorial-role"><span>MY ROLE</span><strong>{item.role || 'Strategy · Creative direction · Execution'}</strong></div>
             <div className="editorial-opening-index"><span>01</span><span>THE STORY BEHIND THE WORK</span></div>
           </div>
-          <div className="editorial-cover">
+          <div className={`editorial-cover ${activeMedia?.type === 'video' ? `is-video-${activeMedia.orientation || 'landscape'}` : ''}`}>
             {activeMedia?.type === 'video'
-              ? <video key={activeMedia.url} src={activeMedia.url} controls className="editorial-cover-media"/>
+              ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay muted loop playsInline preload="auto" className="editorial-cover-media"/>
               : <button type="button" className="editorial-cover-trigger" onClick={() => setViewerOpen(true)} aria-label="Open project image">
                   <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="editorial-cover-media"/>
                   <span className="editorial-expand">OPEN IMAGE ↗</span>
@@ -536,7 +536,7 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
             <div className="editorial-gallery-heading"><p className="eyebrow">02 / VISUAL ARCHIVE</p><span>{String(activeMediaIndex + 1).padStart(2,'0')} — {String(mediaItems.length).padStart(2,'0')}</span></div>
             <div className="editorial-gallery-stage">
               {mediaItems.map((media, index) => (
-                <button type="button" key={media.url + index} className={`editorial-gallery-item ${activeMediaIndex === index ? 'is-active' : ''} ${index % 3 === 0 ? 'gallery-item-large' : ''}`} onClick={() => { setActiveMediaIndex(index); setViewerOpen(true); }} aria-label={`Open media ${index + 1}`}>
+                <button type="button" key={media.url + index} className={`editorial-gallery-item ${activeMediaIndex === index ? 'is-active' : ''} ${index % 3 === 0 ? 'gallery-item-large' : ''} ${media.type === 'video' ? `is-video-${media.orientation || 'landscape'}` : ''}`} onClick={() => { setActiveMediaIndex(index); setViewerOpen(true); }} aria-label={`Open media ${index + 1}`}>
                   {media.type === 'video' ? <video className="editorial-archive-video" src={media.url} autoPlay muted loop playsInline preload="metadata" aria-label={`${item.title} — video ${index + 1}`} /> : <img src={media.thumbnailUrl || media.url} alt={`${item.title} — visual ${index + 1}`} loading="lazy"/>}
                   <span className="editorial-gallery-number">{String(index + 1).padStart(2,'0')}</span>
                 </button>
@@ -557,7 +557,7 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
             <div className="editorial-media-viewer-top"><span>{item.title}</span><span>{String(activeMediaIndex + 1).padStart(2,'0')} / {String(mediaItems.length).padStart(2,'0')}</span></div>
             <button type="button" className="editorial-media-viewer-close" onClick={() => setViewerOpen(false)} aria-label="Close image viewer"><X/></button>
             {activeMedia?.type === 'video'
-              ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay className="editorial-media-viewer-content"/>
+              ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay muted loop playsInline preload="auto" className={`editorial-media-viewer-content ${activeMedia.orientation === 'portrait' ? 'is-video-portrait' : 'is-video-landscape'}`}/>
               : <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="editorial-media-viewer-content"/>}
             {mediaItems.length > 1 && <>
               <button type="button" className="editorial-media-viewer-nav editorial-media-viewer-prev" onClick={() => setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length)} aria-label="Previous image"><ChevronLeft/></button>
@@ -729,7 +729,7 @@ function AdminPortal({
   const [projectForm, setProjectForm] = useState<Partial<Project>>({
     title: '', category: 'Brand & Events', mediaType: 'image', image: '', role: '', summary: '', outcome: '', link: ''
   });
-  const [mediaDrafts, setMediaDrafts] = useState<{ url: string; type: 'image' | 'video'; thumbnailUrl?: string }[]>([]);
+  const [mediaDrafts, setMediaDrafts] = useState<{ url: string; type: 'image' | 'video'; thumbnailUrl?: string; orientation?: 'portrait' | 'landscape' }[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
   const captureRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const [categoryDraft, setCategoryDraft] = useState('');
@@ -1141,7 +1141,7 @@ function AdminPortal({
                         </div>
                         <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_72px_30px] gap-2 sm:grid-cols-[minmax(0,1fr)_90px_34px]">
                           <input type="url" required aria-label={`Media URL ${index + 1}`} value={media.url} onChange={e => setMediaDrafts(mediaDrafts.map((m, i) => i === index ? { ...m, url: e.target.value } : m))} placeholder="Paste image or video URL" className={inputCls} />
-                          <select aria-label="Media type" value={media.type} onChange={e => setMediaDrafts(mediaDrafts.map((m, i) => i === index ? { ...m, type: e.target.value as 'image' | 'video' } : m))} className={inputCls}><option value="image">Photo</option><option value="video">Video</option></select>
+                          <select aria-label="Media type" value={media.type} onChange={e => setMediaDrafts(mediaDrafts.map((m, i) => i === index ? { ...m, type: e.target.value as 'image' | 'video', orientation: e.target.value === 'video' ? (m.orientation || 'landscape') : m.orientation } : m))} className={inputCls}><option value="image">Photo</option><option value="video">Video</option></select>
                           <button type="button" aria-label="Remove media" disabled={mediaDrafts.length === 1} onClick={() => { setMediaDrafts(mediaDrafts.filter((_, i) => i !== index)); setCoverIndex(current => Math.max(0, current > index ? current - 1 : current)); }} className="rounded-lg border border-black/10 text-black/50 disabled:opacity-30">×</button>
                         </div>
                       </div>
@@ -1683,15 +1683,10 @@ export default function App() {
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLightboxItem(project); } }}
                 >
                   {/* Media */}
-                  <div className={`media-wrap relative bg-[#d8d5cd] ${i === 0 ? 'aspect-[16/9]' : 'aspect-[4/3]'}`}>
-                    {project.mediaType === 'video' ? (
+                  <div className={`media-wrap relative bg-[#d8d5cd] ${i === 0 ? 'aspect-[16/9]' : 'aspect-[4/3]'} ${project.media?.some(media => media.type === 'video') || project.mediaType === 'video' ? `is-video-${project.media?.find(media => media.type === 'video')?.orientation || 'landscape'}` : ''}`}>
+                    {(project.media?.some(media => media.type === 'video') || project.mediaType === 'video') ? (
                       <div className="relative h-full w-full">
-                        <img src={project.image} alt={project.title} className="h-full w-full object-cover" />
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity group-hover:bg-black/20">
-                          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform group-hover:scale-110">
-                            <Play className="h-5 w-5 fill-current ml-0.5" />
-                          </span>
-                        </div>
+                        {project.media?.find(media => media.type === 'video')?.url ? <video src={project.media.find(media => media.type === 'video')!.url} autoPlay muted loop playsInline preload="metadata" className="home-project-video" aria-label={`${project.title} video preview`} /> : <img src={project.image} alt={project.title} className="h-full w-full object-cover" />}
                         <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white uppercase tracking-wider backdrop-blur-sm">
                           <Film className="h-3 w-3" /> Video
                         </span>
