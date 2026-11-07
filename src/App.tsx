@@ -537,7 +537,7 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
             <div className="editorial-gallery-stage">
               {mediaItems.map((media, index) => (
                 <button type="button" key={media.url + index} className={`editorial-gallery-item ${activeMediaIndex === index ? 'is-active' : ''} ${index % 3 === 0 ? 'gallery-item-large' : ''}`} onClick={() => { setActiveMediaIndex(index); setViewerOpen(true); }} aria-label={`Open media ${index + 1}`}>
-                  {media.type === 'video' ? <span className="editorial-video-tile"><Film className="h-8 w-8"/><small>VIDEO</small></span> : <img src={media.thumbnailUrl || media.url} alt={`${item.title} — visual ${index + 1}`} loading="lazy"/>}
+                  {media.type === 'video' ? <video className="editorial-archive-video" src={media.url} autoPlay muted loop playsInline preload="metadata" aria-label={`${item.title} — video ${index + 1}`} /> : <img src={media.thumbnailUrl || media.url} alt={`${item.title} — visual ${index + 1}`} loading="lazy"/>}
                   <span className="editorial-gallery-number">{String(index + 1).padStart(2,'0')}</span>
                 </button>
               ))}
