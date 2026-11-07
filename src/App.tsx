@@ -564,13 +564,28 @@ function EditorialBoardView({ board, index }: { board: EditorialBoard; index: nu
 
   useEffect(() => {
     if (focusedImage === null) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousDocumentOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setFocusedImage(null);
-      if (event.key === 'ArrowRight') setFocusedImage(current => current === null ? null : (current + 1) % images.length);
-      if (event.key === 'ArrowLeft') setFocusedImage(current => current === null ? null : (current - 1 + images.length) % images.length);
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        setFocusedImage(current => current === null ? null : (current + 1) % images.length);
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        setFocusedImage(current => current === null ? null : (current - 1 + images.length) % images.length);
+      }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousDocumentOverflow;
+    };
   }, [focusedImage, images.length]);
 
   if (!images.length) return null;
