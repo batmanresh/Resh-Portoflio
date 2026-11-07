@@ -485,12 +485,12 @@ function ExperienceRow({ item, index }: { item: Experience; index: number }) {
 function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
   const mediaItems: NonNullable<Project['media']> = item.media?.length ? item.media : [{ url: item.image, type: (item.mediaType || 'image') as 'image' | 'video' }];
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
-  const [focusPhoto, setFocusPhoto] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const activeMedia = mediaItems[activeMediaIndex] || mediaItems[0];
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') { if (viewerOpen) setViewerOpen(false); else onClose(); }
       if (event.key === 'ArrowRight') setActiveMediaIndex(index => (index + 1) % mediaItems.length);
       if (event.key === 'ArrowLeft') setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length);
     };
@@ -500,7 +500,7 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
       window.removeEventListener('keydown', handler);
       document.body.style.overflow = '';
     };
-  }, [onClose, mediaItems.length]);
+  }, [onClose, mediaItems.length, viewerOpen]);
 
   return (
     <div className="editorial-backdrop fixed inset-0 z-[200] overflow-y-auto bg-[#e9e6df]" onClick={event => { if (event.target === event.currentTarget) onClose(); }} role="dialog" aria-modal="true" aria-label={item.title}>
@@ -517,13 +517,16 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
           </div>
           <div className="editorial-cover">
             {activeMedia?.type === 'video'
-              ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay className="editorial-cover-media"/>
-              : <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="editorial-cover-media"/>}
-            <button type="button" className="editorial-expand" onClick={() => setFocusPhoto(value => !value)}>{focusPhoto ? 'Return to story' : 'View image larger'} ↗</button>
+              ? <video key={activeMedia.url} src={activeMedia.url} controls className="editorial-cover-media"/>
+              : <button type="button" className="editorial-cover-trigger" onClick={() => setViewerOpen(true)} aria-label="Open project image">
+                  <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="editorial-cover-media"/>
+                  <span className="editorial-expand">OPEN IMAGE ↗</span>
+                </button>}
+            {activeMedia?.type === 'video' && <button type="button" className="editorial-expand" onClick={() => setViewerOpen(true)}>VIEW FULLSCREEN ↗</button>}
           </div>
         </section>
 
-        {!focusPhoto && <>
+        <>
           <section className="editorial-context">
             <div><p className="eyebrow">THE THINKING</p><h2>Good creative work<br/><em>starts with a point of view.</em></h2></div>
             <p>{item.summary} The goal was to bring the idea to life through considered creative direction, clear communication and details that make the experience memorable.</p>
@@ -533,7 +536,7 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
             <div className="editorial-gallery-heading"><p className="eyebrow">02 / VISUAL ARCHIVE</p><span>{String(activeMediaIndex + 1).padStart(2,'0')} — {String(mediaItems.length).padStart(2,'0')}</span></div>
             <div className="editorial-gallery-stage">
               {mediaItems.map((media, index) => (
-                <button type="button" key={media.url + index} className={`editorial-gallery-item ${activeMediaIndex === index ? 'is-active' : ''} ${index % 3 === 0 ? 'gallery-item-large' : ''}`} onClick={() => setActiveMediaIndex(index)} aria-label={`View media ${index + 1}`}>
+                <button type="button" key={media.url + index} className={`editorial-gallery-item ${activeMediaIndex === index ? 'is-active' : ''} ${index % 3 === 0 ? 'gallery-item-large' : ''}`} onClick={() => { setActiveMediaIndex(index); setViewerOpen(true); }} aria-label={`Open media ${index + 1}`}>
                   {media.type === 'video' ? <span className="editorial-video-tile"><Film className="h-8 w-8"/><small>VIDEO</small></span> : <img src={media.thumbnailUrl || media.url} alt={`${item.title} — visual ${index + 1}`} loading="lazy"/>}
                   <span className="editorial-gallery-number">{String(index + 1).padStart(2,'0')}</span>
                 </button>
@@ -548,7 +551,21 @@ function Lightbox({ item, onClose }: { item: Project; onClose: () => void }) {
             <div className="editorial-outcome-bottom"><span>STRATEGY → PEOPLE → EXECUTION</span>{item.link?.trim() && <a href={item.link} target="_blank" rel="noreferrer">VIEW PROJECT ↗</a>}</div>
           </section>
           <footer className="editorial-footer"><span>END OF PROJECT FILE</span><button type="button" onClick={onClose}>BACK TO ALL WORK ↑</button><span>RESHAM GURUNG © {new Date().getFullYear()}</span></footer>
-        </>}
+        </>
+        {viewerOpen && (
+          <div className="editorial-media-viewer" role="dialog" aria-modal="true" aria-label="Project media viewer" onClick={event => { if (event.target === event.currentTarget) setViewerOpen(false); }}>
+            <div className="editorial-media-viewer-top"><span>{item.title}</span><span>{String(activeMediaIndex + 1).padStart(2,'0')} / {String(mediaItems.length).padStart(2,'0')}</span></div>
+            <button type="button" className="editorial-media-viewer-close" onClick={() => setViewerOpen(false)} aria-label="Close image viewer"><X/></button>
+            {activeMedia?.type === 'video'
+              ? <video key={activeMedia.url} src={activeMedia.url} controls autoPlay className="editorial-media-viewer-content"/>
+              : <img key={activeMedia?.url} src={activeMedia?.url} alt={item.title} className="editorial-media-viewer-content"/>}
+            {mediaItems.length > 1 && <>
+              <button type="button" className="editorial-media-viewer-nav editorial-media-viewer-prev" onClick={() => setActiveMediaIndex(index => (index - 1 + mediaItems.length) % mediaItems.length)} aria-label="Previous image"><ChevronLeft/></button>
+              <button type="button" className="editorial-media-viewer-nav editorial-media-viewer-next" onClick={() => setActiveMediaIndex(index => (index + 1) % mediaItems.length)} aria-label="Next image"><ChevronRight/></button>
+            </>}
+            <p className="editorial-media-viewer-caption">{activeMedia?.type === 'video' ? 'VIDEO' : 'SELECTED PROJECT VISUAL'}</p>
+          </div>
+        )}
       </article>
     </div>
   );
